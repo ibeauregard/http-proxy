@@ -3,7 +3,7 @@ build:
 	docker image prune -f
 
 run:
-	docker run --interactive --tty --name=my_proxy_container --rm my_proxy:latest
+	docker run --interactive --tty --name=my_proxy_container --publish 8080:8080 --rm my_proxy:latest
 
 restart: stop run
 

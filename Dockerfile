@@ -8,4 +8,5 @@ RUN go build -o my_proxy ./internal
 FROM alpine:3.16
 WORKDIR /home/my_proxy
 COPY --from=build-image /app/my_proxy ./
+EXPOSE 8080
 CMD ["./my_proxy"]
