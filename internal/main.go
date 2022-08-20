@@ -8,6 +8,12 @@ import (
 
 func main() {
 	myServer := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		// Request method names are case-sensitive
+		// See https://www.rfc-editor.org/rfc/rfc7230#section-3.1.1
+		if request.Method != "GET" {
+			http.Error(writer, "Invalid request method; use GET", http.StatusMethodNotAllowed)
+			return
+		}
 		resp, err := http.Get(request.URL.Query().Get("page"))
 		if err != nil {
 			return
