@@ -1,8 +1,7 @@
 package cache
 
 import (
-	"bufio"
-	"fmt"
+	"io"
 	"my_proxy/internal/errors"
 	"net/http"
 	"os"
@@ -10,105 +9,56 @@ import (
 	"time"
 )
 
-// reorganize OOP?
-// implement ResponseWriter?
+type cacheableResponse interface {
+	getHeaders() http.Header
+	write(io.Writer) error
+}
 
-func CacheResponse(proto string, status string, headers http.Header, bodyBytes []byte, cacheKey string) {
-	cacheLifespan := getCacheLifespan(headers)
+func Store(r cacheableResponse, cacheKey string) {
+	cacheLifespan := getCacheLifespan(r.getHeaders())
 	if cacheLifespan == 0 {
 		return
 	}
-	filePath := filepath.Join(os.Getenv("CACHE_DIR_NAME"), cacheKey)
-	f, err := openFile(filePath)
+	cacheFile := cacheFile{filepath.Join(os.Getenv("CACHE_DIR_NAME"), cacheKey)}
+	openCacheFile, err := cacheFile.open()
 	if err != nil {
 		return
 	}
-	defer closeFile(f)
-	if err = writeToFile(f, proto, status, headers, bodyBytes); err != nil {
-		errors.Log(CacheResponse, err)
-		deleteFile(filePath)
+	defer closeFile(openCacheFile)
+	if err = r.write(openCacheFile); err != nil {
+		errors.Log(Store, err)
+		cacheFile.delete()
 		return
 	}
-	scheduleDeletion(cacheLifespan, filePath)
+	cacheFile.scheduleDeletion(cacheLifespan)
 }
 
-func openFile(path string) (*os.File, error) {
-	f, err := os.Create(path)
+type cacheFile struct {
+	path string
+}
+
+func (f *cacheFile) open() (*os.File, error) {
+	osFile, err := os.Create(f.path)
 	if err != nil {
-		errors.Log(openFile, err)
+		errors.Log(f.open, err)
 	}
-	return f, err
+	return osFile, err
 }
 
-func writeToFile(f *os.File, proto string, status string, headers http.Header, bodyBytes []byte) error {
-	w := cacheEntryWriter{bufio.NewWriter(f)}
-	if err := w.writeStatusLine(proto, status); err != nil {
-		return errors.Format(writeToFile, err)
-	}
-	if err := w.writeHeaders(headers); err != nil {
-		return errors.Format(writeToFile, err)
-	}
-	if err := w.writeBody(bodyBytes); err != nil {
-		return errors.Format(writeToFile, err)
-	}
-	if err := w.Flush(); err != nil {
-		return errors.Format(writeToFile, err)
-	}
-	return nil
-}
-
-func closeFile(f *os.File) {
-	if err := f.Close(); err != nil {
-		errors.Log(closeFile, err)
+func (f *cacheFile) delete() {
+	if err := os.Remove(f.path); err != nil {
+		errors.Log(f.delete, err)
 	}
 }
 
-func deleteFile(path string) {
-	if err := os.Remove(path); err != nil {
-		errors.Log(deleteFile, err)
-	}
-}
-
-func scheduleDeletion(lifespan time.Duration, filePath string) {
+func (f *cacheFile) scheduleDeletion(lifespan time.Duration) {
 	time.AfterFunc(lifespan, func() {
-		deleteFile(filePath)
+		f.delete()
 	})
 }
 
-type cacheEntryWriter struct {
-	*bufio.Writer
-}
-
-var crlf = "\r\n"
-
-func (w *cacheEntryWriter) writeStatusLine(proto, status string) error {
-	if _, err := w.WriteString(fmt.Sprintf("%s %s %s", proto, status, crlf)); err != nil {
-		return errors.Format(w.writeStatusLine, err)
+func closeFile(f io.Closer) {
+	if err := f.Close(); err != nil {
+		errors.Log(closeFile, err)
 	}
-	return nil
-}
-
-func (w *cacheEntryWriter) writeHeaders(headers http.Header) error {
-	colonSpace := ": "
-	for headerKey, headerValues := range headers {
-		for _, headerValue := range headerValues {
-			if _, err := w.WriteString(fmt.Sprint(headerKey, colonSpace, headerValue, crlf)); err != nil {
-				return errors.Format(w.writeHeaders, err)
-			}
-		}
-	}
-	if _, err := w.WriteString(fmt.Sprint("X-CACHE", colonSpace, "HIT", crlf)); err != nil {
-		return errors.Format(w.writeHeaders, err)
-	}
-	if _, err := w.WriteString(crlf); err != nil {
-		return errors.Format(w.writeHeaders, err)
-	}
-	return nil
-}
-
-func (w *cacheEntryWriter) writeBody(body []byte) error {
-	if _, err := w.Write(body); err != nil {
-		return errors.Format(w.writeBody, err)
-	}
-	return nil
 }

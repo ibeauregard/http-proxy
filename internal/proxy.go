@@ -45,18 +45,17 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl string, cacheKey s
 	_ = resp.Body.Close()
 
 	filteredHeaders := getFilteredHeaders(resp.Header, bodyBytes)
-
-	go cache.CacheResponse(resp.Proto, resp.Status, filteredHeaders, bodyBytes, cacheKey)
-
-	writeHeaders(filteredHeaders, writer, resp.StatusCode)
+	writeHeaders(writer, resp.StatusCode, filteredHeaders)
 
 	_, err = writer.Write(bodyBytes)
 	if err != nil {
 		errors.Log(serveFromUpstream, err)
 	}
+
+	go cache.Store(cache.NewCacheableResponse(resp.Proto, resp.Status, filteredHeaders, bodyBytes), cacheKey)
 }
 
-func writeHeaders(headers http.Header, writer http.ResponseWriter, statusCode int) {
+func writeHeaders(writer http.ResponseWriter, statusCode int, headers http.Header) {
 	for name, values := range headers {
 		writer.Header()[name] = values
 	}
