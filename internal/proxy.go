@@ -30,6 +30,7 @@ func validateRequestMethod(writer http.ResponseWriter, requestMethod string) boo
 	return true
 }
 
+// have the file fetch return http.Response? most likely
 func serveFromCache(writer http.ResponseWriter, cacheKey string) bool {
 	return false
 }
@@ -45,7 +46,7 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl string, cacheKey s
 
 	filteredHeaders := getFilteredHeaders(resp.Header, bodyBytes)
 
-	go cache.CacheResponse(filteredHeaders, bodyBytes, cacheKey)
+	go cache.CacheResponse(resp.Proto, resp.Status, filteredHeaders, bodyBytes, cacheKey)
 
 	writeHeaders(filteredHeaders, writer, resp.StatusCode)
 
