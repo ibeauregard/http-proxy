@@ -9,18 +9,18 @@ import (
 )
 
 type CacheableResponse struct {
-	proto   string
-	status  string
-	headers http.Header
-	body    []byte
+	proto      string
+	statusCode int
+	headers    http.Header
+	body       []byte
 }
 
-func NewCacheableResponse(proto string, status string, headers http.Header, body []byte) *CacheableResponse {
+func NewCacheableResponse(proto string, statusCode int, headers http.Header, body []byte) *CacheableResponse {
 	return &CacheableResponse{
-		proto:   proto,
-		status:  status,
-		headers: headers,
-		body:    body,
+		proto:      proto,
+		statusCode: statusCode,
+		headers:    headers,
+		body:       body,
 	}
 }
 
@@ -30,7 +30,7 @@ func (r *CacheableResponse) getHeaders() http.Header {
 
 func (r *CacheableResponse) write(f io.Writer) error {
 	w := cacheEntryWriter{bufio.NewWriter(f)}
-	if err := w.writeStatusLine(r.proto, r.status); err != nil {
+	if err := w.writeStatusLine(r.proto, r.statusCode); err != nil {
 		return errors.Format(r.write, err)
 	}
 	if err := w.writeHeaders(r.headers); err != nil {
@@ -51,8 +51,9 @@ type cacheEntryWriter struct {
 
 var crlf = "\r\n"
 
-func (w *cacheEntryWriter) writeStatusLine(proto, status string) error {
-	if _, err := w.WriteString(fmt.Sprintf("%s %s %s", proto, status, crlf)); err != nil {
+func (w *cacheEntryWriter) writeStatusLine(proto string, statusCode int) error {
+	if _, err := w.WriteString(
+		fmt.Sprintf("%s %d %s %s", proto, statusCode, http.StatusText(statusCode), crlf)); err != nil {
 		return errors.Format(w.writeStatusLine, err)
 	}
 	return nil

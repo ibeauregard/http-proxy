@@ -47,7 +47,7 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl string, cacheKey s
 
 	serve(writer, resp.StatusCode, filteredHeaders, bodyBytes)
 
-	go cache.Store(cache.NewCacheableResponse(resp.Proto, resp.Status, filteredHeaders, bodyBytes), cacheKey)
+	go cache.Store(cache.NewCacheableResponse(resp.Proto, resp.StatusCode, filteredHeaders, bodyBytes), cacheKey)
 }
 
 func serve(writer http.ResponseWriter, statusCode int, headers http.Header, body []byte) {
