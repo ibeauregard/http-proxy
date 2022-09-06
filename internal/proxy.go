@@ -18,6 +18,7 @@ func myProxy(writer http.ResponseWriter, request *http.Request) {
 	response := getResponseFromCache(cacheKey)
 	if response == nil {
 		response = getResponseFromUpstream(requestUrl, cacheKey)
+		writer.Header()["X-Cache"] = []string{"MISS"}
 	}
 	serve(writer, response)
 }
@@ -72,7 +73,6 @@ func writeHeaders(writer http.ResponseWriter, headers http.Header) {
 	for name, values := range headers {
 		writer.Header()[name] = values
 	}
-	writer.Header()["X-Cache"] = []string{"MISS"}
 }
 
 var getFilteredHeaders = func() func(http.Header, []byte) http.Header {
