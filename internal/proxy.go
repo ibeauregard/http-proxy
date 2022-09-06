@@ -4,7 +4,7 @@ import (
 	"io"
 	"my_proxy/internal/cache"
 	"my_proxy/internal/errors"
-	r "my_proxy/internal/response"
+	h "my_proxy/internal/http"
 	"net/http"
 	"strconv"
 )
@@ -34,11 +34,11 @@ func validateRequestMethod(writer http.ResponseWriter, requestMethod string) boo
 	return true
 }
 
-func getResponseFromCache(_ string) *r.Response {
+func getResponseFromCache(_ string) *h.Response {
 	return nil
 }
 
-func getResponseFromUpstream(requestUrl string) *r.Response {
+func getResponseFromUpstream(requestUrl string) *h.Response {
 	resp, err := http.Get(requestUrl)
 	if err != nil {
 		return nil
@@ -48,7 +48,7 @@ func getResponseFromUpstream(requestUrl string) *r.Response {
 	_ = resp.Body.Close()
 	filteredHeaders := getFilteredHeaders(resp.Header, bodyBytes)
 
-	return r.NewResponse(resp.Proto, resp.StatusCode, filteredHeaders, bodyBytes)
+	return h.NewResponse(resp.Proto, resp.StatusCode, filteredHeaders, bodyBytes)
 }
 
 type response interface {
