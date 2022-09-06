@@ -28,19 +28,19 @@ func (r *CacheableResponse) getHeaders() http.Header {
 	return r.headers
 }
 
-func (r *CacheableResponse) write(f io.Writer) error {
+func (r *CacheableResponse) writeToCache(f io.Writer) error {
 	w := cacheEntryWriter{bufio.NewWriter(f)}
 	if err := w.writeStatusLine(r.proto, r.statusCode); err != nil {
-		return errors.Format(r.write, err)
+		return errors.Format(r.writeToCache, err)
 	}
 	if err := w.writeHeaders(r.headers); err != nil {
-		return errors.Format(r.write, err)
+		return errors.Format(r.writeToCache, err)
 	}
 	if err := w.writeBody(r.body); err != nil {
-		return errors.Format(r.write, err)
+		return errors.Format(r.writeToCache, err)
 	}
 	if err := w.Flush(); err != nil {
-		return errors.Format(r.write, err)
+		return errors.Format(r.writeToCache, err)
 	}
 	return nil
 }

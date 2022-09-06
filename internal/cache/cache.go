@@ -11,7 +11,7 @@ import (
 
 type cacheableResponse interface {
 	getHeaders() http.Header
-	write(io.Writer) error
+	writeToCache(io.Writer) error
 }
 
 func Store(r cacheableResponse, cacheKey string) {
@@ -25,7 +25,7 @@ func Store(r cacheableResponse, cacheKey string) {
 		return
 	}
 	defer closeFile(openCacheFile)
-	if err = r.write(openCacheFile); err != nil {
+	if err = r.writeToCache(openCacheFile); err != nil {
 		errors.Log(Store, err)
 		cacheFile.delete()
 		return
