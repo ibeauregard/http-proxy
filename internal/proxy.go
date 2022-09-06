@@ -14,13 +14,9 @@ func myProxy(writer http.ResponseWriter, request *http.Request) {
 	}
 	requestUrl := request.URL.Query().Get("request")
 	cacheKey := cache.GetKey(requestUrl)
-	response := getResponseFromCache(cacheKey)
-	if response == nil {
-		response = getResponseFromUpstream(requestUrl)
-		writer.Header()["X-Cache"] = []string{"MISS"}
+	if !serveFromCache(writer, cacheKey) {
+		serveFromUpstream(writer, requestUrl, cacheKey)
 	}
-	response.Serve(writer)
-	go store(response, cacheKey)
 }
 
 func validateRequestMethod(writer http.ResponseWriter, requestMethod string) bool {
@@ -33,21 +29,26 @@ func validateRequestMethod(writer http.ResponseWriter, requestMethod string) boo
 	return true
 }
 
-func getResponseFromCache(_ string) *h.Response {
-	return nil
+func serveFromCache(_ http.ResponseWriter, _ string) bool {
+	return false
 }
 
-func getResponseFromUpstream(requestUrl string) *h.Response {
+func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) {
 	resp, err := http.Get(requestUrl)
 	if err != nil {
-		return nil
+		return
 	}
+
+	writer.Header()["X-Cache"] = []string{"MISS"}
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
 	_ = resp.Body.Close()
 	filteredHeaders := getFilteredHeaders(resp.Header, bodyBytes)
 
-	return &h.Response{Proto: resp.Proto, StatusCode: resp.StatusCode, Headers: filteredHeaders, Body: bodyBytes}
+	response := h.NewResponse(resp.Proto, resp.StatusCode, filteredHeaders, bodyBytes)
+
+	response.Serve(writer)
+	go store(response, cacheKey)
 }
 
 func store(r *h.Response, cacheKey string) {

@@ -12,6 +12,15 @@ type Response struct {
 	Body       []byte
 }
 
+func NewResponse(proto string, statusCode int, headers http.Header, body []byte) *Response {
+	return &Response{
+		Proto:      proto,
+		StatusCode: statusCode,
+		Headers:    headers,
+		Body:       body,
+	}
+}
+
 func (r *Response) Serve(writer http.ResponseWriter) {
 	writeHeaders(writer, r.Headers)
 	writer.WriteHeader(r.StatusCode)
