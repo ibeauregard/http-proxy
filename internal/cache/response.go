@@ -5,38 +5,35 @@ import (
 	"fmt"
 	"io"
 	"my_proxy/internal/errors"
+	r "my_proxy/internal/response"
 	"net/http"
 )
 
-type CacheableResponse struct {
-	proto      string
-	statusCode int
-	headers    http.Header
-	body       []byte
+type cacheableResponseImpl struct {
+	proto string
+	*r.Response
 }
 
-func NewCacheableResponse(proto string, statusCode int, headers http.Header, body []byte) *CacheableResponse {
-	return &CacheableResponse{
-		proto:      proto,
-		statusCode: statusCode,
-		headers:    headers,
-		body:       body,
+func NewCacheableResponse(proto string, r *r.Response) *cacheableResponseImpl {
+	return &cacheableResponseImpl{
+		proto:    proto,
+		Response: r,
 	}
 }
 
-func (r *CacheableResponse) getHeaders() http.Header {
-	return r.headers
+func (r *cacheableResponseImpl) getHeaders() http.Header {
+	return r.GetHeaders()
 }
 
-func (r *CacheableResponse) writeToCache(f io.Writer) error {
+func (r *cacheableResponseImpl) writeToCache(f io.Writer) error {
 	w := cacheEntryWriter{bufio.NewWriter(f)}
-	if err := w.writeStatusLine(r.proto, r.statusCode); err != nil {
+	if err := w.writeStatusLine(r.proto, r.GetStatusCode()); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
-	if err := w.writeHeaders(r.headers); err != nil {
+	if err := w.writeHeaders(r.GetHeaders()); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
-	if err := w.writeBody(r.body); err != nil {
+	if err := w.writeBody(r.GetBody()); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
 	if err := w.Flush(); err != nil {

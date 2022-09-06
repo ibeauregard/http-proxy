@@ -4,6 +4,7 @@ import (
 	"io"
 	"my_proxy/internal/cache"
 	"my_proxy/internal/errors"
+	r "my_proxy/internal/response"
 	"net/http"
 	"strconv"
 )
@@ -14,10 +15,11 @@ func myProxy(writer http.ResponseWriter, request *http.Request) {
 	}
 	requestUrl := request.URL.Query().Get("request")
 	cacheKey := cache.GetKey(requestUrl)
-	if serveFromCache(writer, cacheKey) {
-		return
+	response := getResponseFromCache(cacheKey)
+	if response == nil {
+		response = getResponseFromUpstream(requestUrl, cacheKey)
 	}
-	serveFromUpstream(writer, requestUrl, cacheKey)
+	serve(writer, response)
 }
 
 func validateRequestMethod(writer http.ResponseWriter, requestMethod string) bool {
@@ -31,40 +33,46 @@ func validateRequestMethod(writer http.ResponseWriter, requestMethod string) boo
 }
 
 // have the file fetch return http.Response? most likely
-func serveFromCache(writer http.ResponseWriter, cacheKey string) bool {
-	return false
+func getResponseFromCache(cacheKey string) *r.Response {
+	return nil
 }
 
-func serveFromUpstream(writer http.ResponseWriter, requestUrl string, cacheKey string) {
+func getResponseFromUpstream(requestUrl string, cacheKey string) *r.Response {
 	resp, err := http.Get(requestUrl)
 	if err != nil {
-		return
+		return nil
 	}
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
 	_ = resp.Body.Close()
 	filteredHeaders := getFilteredHeaders(resp.Header, bodyBytes)
 
-	serve(writer, resp.StatusCode, filteredHeaders, bodyBytes)
-
-	go cache.Store(cache.NewCacheableResponse(resp.Proto, resp.StatusCode, filteredHeaders, bodyBytes), cacheKey)
+	response := r.NewResponse(resp.StatusCode, filteredHeaders, bodyBytes)
+	go cache.Store(cache.NewCacheableResponse(resp.Proto, response), cacheKey)
+	return response
 }
 
-func serve(writer http.ResponseWriter, statusCode int, headers http.Header, body []byte) {
-	writeHeaders(writer, statusCode, headers)
+type response interface {
+	GetStatusCode() int
+	GetHeaders() http.Header
+	GetBody() []byte
+}
 
-	_, err := writer.Write(body)
+func serve(writer http.ResponseWriter, r response) {
+	writeHeaders(writer, r.GetHeaders())
+	writer.WriteHeader(r.GetStatusCode())
+
+	_, err := writer.Write(r.GetBody())
 	if err != nil {
-		errors.Log(serveFromUpstream, err)
+		errors.Log(getResponseFromUpstream, err)
 	}
 }
 
-func writeHeaders(writer http.ResponseWriter, statusCode int, headers http.Header) {
+func writeHeaders(writer http.ResponseWriter, headers http.Header) {
 	for name, values := range headers {
 		writer.Header()[name] = values
 	}
 	writer.Header()["X-Cache"] = []string{"MISS"}
-	writer.WriteHeader(statusCode)
 }
 
 var getFilteredHeaders = func() func(http.Header, []byte) http.Header {
