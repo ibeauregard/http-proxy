@@ -5,33 +5,44 @@ import (
 	"fmt"
 	"io"
 	"my_proxy/internal/errors"
+	h "my_proxy/internal/http"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
-type cacheableResponse struct {
-	response
+type CacheableResponse struct {
+	*h.Response
 }
 
-type response interface {
-	GetProto() string
-	GetStatusCode() int
-	GetHeaders() http.Header
-	GetBody() []byte
+func (r *CacheableResponse) Store(cacheKey string) {
+	cacheLifespan := getCacheLifespan(r.Headers)
+	if cacheLifespan == 0 {
+		return
+	}
+	cacheFile := cacheFile{filepath.Join(os.Getenv("CACHE_DIR_NAME"), cacheKey)}
+	openCacheFile, err := cacheFile.open()
+	if err != nil {
+		return
+	}
+	defer closeFile(openCacheFile)
+	if err = r.writeToCache(openCacheFile); err != nil {
+		errors.Log(r.Store, err)
+		cacheFile.delete()
+		return
+	}
+	cacheFile.scheduleDeletion(cacheLifespan)
 }
 
-func (r *cacheableResponse) getHeaders() http.Header {
-	return r.GetHeaders()
-}
-
-func (r *cacheableResponse) writeToCache(f io.Writer) error {
+func (r *CacheableResponse) writeToCache(f io.Writer) error {
 	w := cacheEntryWriter{bufio.NewWriter(f)}
-	if err := w.writeStatusLine(r.GetProto(), r.GetStatusCode()); err != nil {
+	if err := w.writeStatusLine(r.Proto, r.StatusCode); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
-	if err := w.writeHeaders(r.GetHeaders()); err != nil {
+	if err := w.writeHeaders(r.Headers); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
-	if err := w.writeBody(r.GetBody()); err != nil {
+	if err := w.writeBody(r.Body); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
 	if err := w.Flush(); err != nil {

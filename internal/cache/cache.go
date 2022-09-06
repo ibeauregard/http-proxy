@@ -4,29 +4,8 @@ import (
 	"io"
 	"my_proxy/internal/errors"
 	"os"
-	"path/filepath"
 	"time"
 )
-
-func Store(r response, cacheKey string) {
-	cacheableR := &cacheableResponse{r}
-	cacheLifespan := getCacheLifespan(cacheableR.getHeaders())
-	if cacheLifespan == 0 {
-		return
-	}
-	cacheFile := cacheFile{filepath.Join(os.Getenv("CACHE_DIR_NAME"), cacheKey)}
-	openCacheFile, err := cacheFile.open()
-	if err != nil {
-		return
-	}
-	defer closeFile(openCacheFile)
-	if err = cacheableR.writeToCache(openCacheFile); err != nil {
-		errors.Log(Store, err)
-		cacheFile.delete()
-		return
-	}
-	cacheFile.scheduleDeletion(cacheLifespan)
-}
 
 type cacheFile struct {
 	path string

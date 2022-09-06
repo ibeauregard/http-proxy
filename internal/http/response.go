@@ -1,35 +1,29 @@
 package http
 
-import "net/http"
+import (
+	"my_proxy/internal/errors"
+	"net/http"
+)
 
 type Response struct {
-	proto      string
-	statusCode int
-	headers    http.Header
-	body       []byte
+	Proto      string
+	StatusCode int
+	Headers    http.Header
+	Body       []byte
 }
 
-func NewResponse(proto string, statusCode int, headers http.Header, body []byte) *Response {
-	return &Response{
-		proto:      proto,
-		statusCode: statusCode,
-		headers:    headers,
-		body:       body,
+func (r *Response) Serve(writer http.ResponseWriter) {
+	writeHeaders(writer, r.Headers)
+	writer.WriteHeader(r.StatusCode)
+
+	_, err := writer.Write(r.Body)
+	if err != nil {
+		errors.Log(r.Serve, err)
 	}
 }
 
-func (r *Response) GetProto() string {
-	return r.proto
-}
-
-func (r *Response) GetStatusCode() int {
-	return r.statusCode
-}
-
-func (r *Response) GetHeaders() http.Header {
-	return r.headers
-}
-
-func (r *Response) GetBody() []byte {
-	return r.body
+func writeHeaders(writer http.ResponseWriter, headers http.Header) {
+	for name, values := range headers {
+		writer.Header()[name] = values
+	}
 }

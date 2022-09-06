@@ -3,7 +3,6 @@ package main
 import (
 	"io"
 	"my_proxy/internal/cache"
-	"my_proxy/internal/errors"
 	h "my_proxy/internal/http"
 	"net/http"
 	"strconv"
@@ -20,8 +19,8 @@ func myProxy(writer http.ResponseWriter, request *http.Request) {
 		response = getResponseFromUpstream(requestUrl)
 		writer.Header()["X-Cache"] = []string{"MISS"}
 	}
-	serve(writer, response)
-	go cache.Store(response, cacheKey)
+	response.Serve(writer)
+	go store(response, cacheKey)
 }
 
 func validateRequestMethod(writer http.ResponseWriter, requestMethod string) bool {
@@ -48,29 +47,12 @@ func getResponseFromUpstream(requestUrl string) *h.Response {
 	_ = resp.Body.Close()
 	filteredHeaders := getFilteredHeaders(resp.Header, bodyBytes)
 
-	return h.NewResponse(resp.Proto, resp.StatusCode, filteredHeaders, bodyBytes)
+	return &h.Response{Proto: resp.Proto, StatusCode: resp.StatusCode, Headers: filteredHeaders, Body: bodyBytes}
 }
 
-type response interface {
-	GetStatusCode() int
-	GetHeaders() http.Header
-	GetBody() []byte
-}
-
-func serve(writer http.ResponseWriter, r response) {
-	writeHeaders(writer, r.GetHeaders())
-	writer.WriteHeader(r.GetStatusCode())
-
-	_, err := writer.Write(r.GetBody())
-	if err != nil {
-		errors.Log(getResponseFromUpstream, err)
-	}
-}
-
-func writeHeaders(writer http.ResponseWriter, headers http.Header) {
-	for name, values := range headers {
-		writer.Header()[name] = values
-	}
+func store(r *h.Response, cacheKey string) {
+	cr := &cache.CacheableResponse{Response: r}
+	cr.Store(cacheKey)
 }
 
 var getFilteredHeaders = func() func(http.Header, []byte) http.Header {
