@@ -3,19 +3,14 @@ package cache
 import (
 	"io"
 	"my_proxy/internal/errors"
-	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 )
 
-type cacheableResponse interface {
-	getHeaders() http.Header
-	writeToCache(io.Writer) error
-}
-
-func Store(r cacheableResponse, cacheKey string) {
-	cacheLifespan := getCacheLifespan(r.getHeaders())
+func Store(r response, cacheKey string) {
+	cacheableR := &cacheableResponse{r}
+	cacheLifespan := getCacheLifespan(cacheableR.getHeaders())
 	if cacheLifespan == 0 {
 		return
 	}
@@ -25,7 +20,7 @@ func Store(r cacheableResponse, cacheKey string) {
 		return
 	}
 	defer closeFile(openCacheFile)
-	if err = r.writeToCache(openCacheFile); err != nil {
+	if err = cacheableR.writeToCache(openCacheFile); err != nil {
 		errors.Log(Store, err)
 		cacheFile.delete()
 		return

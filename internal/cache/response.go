@@ -5,29 +5,27 @@ import (
 	"fmt"
 	"io"
 	"my_proxy/internal/errors"
-	r "my_proxy/internal/response"
 	"net/http"
 )
 
-type cacheableResponseImpl struct {
-	proto string
-	*r.Response
+type cacheableResponse struct {
+	response
 }
 
-func NewCacheableResponse(proto string, r *r.Response) *cacheableResponseImpl {
-	return &cacheableResponseImpl{
-		proto:    proto,
-		Response: r,
-	}
+type response interface {
+	GetProto() string
+	GetStatusCode() int
+	GetHeaders() http.Header
+	GetBody() []byte
 }
 
-func (r *cacheableResponseImpl) getHeaders() http.Header {
+func (r *cacheableResponse) getHeaders() http.Header {
 	return r.GetHeaders()
 }
 
-func (r *cacheableResponseImpl) writeToCache(f io.Writer) error {
+func (r *cacheableResponse) writeToCache(f io.Writer) error {
 	w := cacheEntryWriter{bufio.NewWriter(f)}
-	if err := w.writeStatusLine(r.proto, r.GetStatusCode()); err != nil {
+	if err := w.writeStatusLine(r.GetProto(), r.GetStatusCode()); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
 	if err := w.writeHeaders(r.GetHeaders()); err != nil {

@@ -3,17 +3,23 @@ package response
 import "net/http"
 
 type Response struct {
+	proto      string
 	statusCode int
 	headers    http.Header
 	body       []byte
 }
 
-func NewResponse(statusCode int, headers http.Header, body []byte) *Response {
+func NewResponse(proto string, statusCode int, headers http.Header, body []byte) *Response {
 	return &Response{
+		proto:      proto,
 		statusCode: statusCode,
 		headers:    headers,
 		body:       body,
 	}
+}
+
+func (r *Response) GetProto() string {
+	return r.proto
 }
 
 func (r *Response) GetStatusCode() int {

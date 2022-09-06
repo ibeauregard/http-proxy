@@ -17,10 +17,11 @@ func myProxy(writer http.ResponseWriter, request *http.Request) {
 	cacheKey := cache.GetKey(requestUrl)
 	response := getResponseFromCache(cacheKey)
 	if response == nil {
-		response = getResponseFromUpstream(requestUrl, cacheKey)
+		response = getResponseFromUpstream(requestUrl)
 		writer.Header()["X-Cache"] = []string{"MISS"}
 	}
 	serve(writer, response)
+	go cache.Store(response, cacheKey)
 }
 
 func validateRequestMethod(writer http.ResponseWriter, requestMethod string) bool {
@@ -33,12 +34,11 @@ func validateRequestMethod(writer http.ResponseWriter, requestMethod string) boo
 	return true
 }
 
-// have the file fetch return http.Response? most likely
-func getResponseFromCache(cacheKey string) *r.Response {
+func getResponseFromCache(_ string) *r.Response {
 	return nil
 }
 
-func getResponseFromUpstream(requestUrl string, cacheKey string) *r.Response {
+func getResponseFromUpstream(requestUrl string) *r.Response {
 	resp, err := http.Get(requestUrl)
 	if err != nil {
 		return nil
@@ -48,9 +48,7 @@ func getResponseFromUpstream(requestUrl string, cacheKey string) *r.Response {
 	_ = resp.Body.Close()
 	filteredHeaders := getFilteredHeaders(resp.Header, bodyBytes)
 
-	response := r.NewResponse(resp.StatusCode, filteredHeaders, bodyBytes)
-	go cache.Store(cache.NewCacheableResponse(resp.Proto, response), cacheKey)
-	return response
+	return r.NewResponse(resp.Proto, resp.StatusCode, filteredHeaders, bodyBytes)
 }
 
 type response interface {
