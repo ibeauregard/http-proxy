@@ -31,6 +31,13 @@ func (r *Response) WithNewBody(body io.Reader) *Response {
 	return r
 }
 
+func CloseResponseBody(body io.Closer) {
+	err := body.Close()
+	if err != nil {
+		errors.Log(CloseResponseBody, err)
+	}
+}
+
 func writeHeaders(writer http.ResponseWriter, headers http.Header) {
 	for name, values := range headers {
 		writer.Header()[name] = values

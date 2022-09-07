@@ -40,7 +40,7 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 		errors.Log(serveFromUpstream, err)
 		return
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer h.CloseResponseBody(resp.Body)
 
 	writer.Header()["X-Cache"] = []string{"MISS"}
 
