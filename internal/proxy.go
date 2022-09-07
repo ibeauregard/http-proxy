@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"my_proxy/internal/cache"
+	"my_proxy/internal/errors"
 	h "my_proxy/internal/http"
 	"net/http"
 )
@@ -36,6 +37,7 @@ func serveFromCache(_ http.ResponseWriter, _ string) bool {
 func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) {
 	resp, err := http.Get(requestUrl)
 	if err != nil {
+		errors.Log(serveFromUpstream, err)
 		return
 	}
 	defer func() { _ = resp.Body.Close() }()

@@ -23,6 +23,7 @@ func (r *CacheableResponse) Store(cacheKey string) {
 	cacheFile := cacheFile{filepath.Join(os.Getenv("CACHE_DIR_NAME"), cacheKey)}
 	openCacheFile, err := cacheFile.open()
 	if err != nil {
+		errors.Log(r.Store, err)
 		return
 	}
 	defer closeFile(openCacheFile)
