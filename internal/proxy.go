@@ -1,11 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"io"
 	"my_proxy/internal/cache"
 	h "my_proxy/internal/http"
 	"net/http"
-	"strconv"
 )
 
 func myProxy(writer http.ResponseWriter, request *http.Request) {
@@ -38,17 +38,14 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 	if err != nil {
 		return
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	writer.Header()["X-Cache"] = []string{"MISS"}
 
-	bodyBytes, _ := io.ReadAll(resp.Body)
-	_ = resp.Body.Close()
-	filteredHeaders := getFilteredHeaders(resp.Header, bodyBytes)
-
-	response := h.NewResponse(resp.Proto, resp.StatusCode, filteredHeaders, bodyBytes)
-
+	buf := &bytes.Buffer{}
+	response := h.NewResponse(resp.Proto, resp.StatusCode, getFilteredHeaders(resp.Header), io.TeeReader(resp.Body, buf))
 	response.Serve(writer)
-	go store(response, cacheKey)
+	go store(response.WithNewBody(buf), cacheKey)
 }
 
 func store(r *h.Response, cacheKey string) {
@@ -56,7 +53,7 @@ func store(r *h.Response, cacheKey string) {
 	cr.Store(cacheKey)
 }
 
-var getFilteredHeaders = func() func(http.Header, []byte) http.Header {
+var getFilteredHeaders = func() func(http.Header) http.Header {
 	copiedHeaders := map[string]struct{}{
 		"Content-Type":  {},
 		"Cache-Control": {},
@@ -64,7 +61,7 @@ var getFilteredHeaders = func() func(http.Header, []byte) http.Header {
 		"Expires":       {},
 		"Set-Cookie":    {},
 	}
-	return func(responseHeaders http.Header, bodyBytes []byte) http.Header {
+	return func(responseHeaders http.Header) http.Header {
 		filteredHeaders := make(http.Header)
 		for name, values := range responseHeaders {
 			canonicalHeaderKey := http.CanonicalHeaderKey(name)
@@ -72,7 +69,6 @@ var getFilteredHeaders = func() func(http.Header, []byte) http.Header {
 				filteredHeaders[canonicalHeaderKey] = values
 			}
 		}
-		filteredHeaders["Content-Length"] = []string{strconv.Itoa(len(bodyBytes))}
 		filteredHeaders["Server"] = []string{"Ian's Proxy"}
 		return filteredHeaders
 	}

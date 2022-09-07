@@ -1,6 +1,7 @@
 package http
 
 import (
+	"io"
 	"my_proxy/internal/errors"
 	"net/http"
 )
@@ -9,10 +10,10 @@ type Response struct {
 	Proto      string
 	StatusCode int
 	Headers    http.Header
-	Body       []byte
+	Body       io.Reader
 }
 
-func NewResponse(proto string, statusCode int, headers http.Header, body []byte) *Response {
+func NewResponse(proto string, statusCode int, headers http.Header, body io.Reader) *Response {
 	return &Response{
 		Proto:      proto,
 		StatusCode: statusCode,
@@ -25,10 +26,15 @@ func (r *Response) Serve(writer http.ResponseWriter) {
 	writeHeaders(writer, r.Headers)
 	writer.WriteHeader(r.StatusCode)
 
-	_, err := writer.Write(r.Body)
+	_, err := io.Copy(writer, r.Body)
 	if err != nil {
 		errors.Log(r.Serve, err)
 	}
+}
+
+func (r *Response) WithNewBody(body io.Reader) *Response {
+	r.Body = body
+	return r
 }
 
 func writeHeaders(writer http.ResponseWriter, headers http.Header) {

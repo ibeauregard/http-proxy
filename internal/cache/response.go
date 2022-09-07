@@ -42,7 +42,7 @@ func (r *CacheableResponse) writeToCache(f io.Writer) error {
 	if err := w.writeHeaders(r.Headers); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
-	if err := w.writeBody(r.Body); err != nil {
+	if _, err := io.Copy(w, r.Body); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
 	if err := w.Flush(); err != nil {
