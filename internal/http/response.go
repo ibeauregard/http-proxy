@@ -7,23 +7,17 @@ import (
 )
 
 type Response struct {
-	Proto      string
-	StatusCode int
-	Headers    http.Header
-	Body       io.Reader
+	*http.Response
 }
 
-func NewResponse(proto string, statusCode int, headers http.Header, body io.Reader) *Response {
-	return &Response{
-		Proto:      proto,
-		StatusCode: statusCode,
-		Headers:    headers,
-		Body:       body,
-	}
+func NewResponse(r *http.Response) *Response {
+	resp := &Response{r}
+	resp.Header = getFilteredHeaders(r.Header)
+	return resp
 }
 
 func (r *Response) Serve(writer http.ResponseWriter) {
-	writeHeaders(writer, r.Headers)
+	writeHeaders(writer, r.Header)
 	writer.WriteHeader(r.StatusCode)
 
 	_, err := io.Copy(writer, r.Body)
@@ -33,7 +27,7 @@ func (r *Response) Serve(writer http.ResponseWriter) {
 }
 
 func (r *Response) WithNewBody(body io.Reader) *Response {
-	r.Body = body
+	r.Body = io.NopCloser(body)
 	return r
 }
 
@@ -42,3 +36,24 @@ func writeHeaders(writer http.ResponseWriter, headers http.Header) {
 		writer.Header()[name] = values
 	}
 }
+
+var getFilteredHeaders = func() func(http.Header) http.Header {
+	copiedHeaders := map[string]struct{}{
+		"Content-Type":  {},
+		"Cache-Control": {},
+		"Date":          {},
+		"Expires":       {},
+		"Set-Cookie":    {},
+	}
+	return func(responseHeaders http.Header) http.Header {
+		filteredHeaders := make(http.Header)
+		for name, values := range responseHeaders {
+			canonicalHeaderKey := http.CanonicalHeaderKey(name)
+			if _, ok := copiedHeaders[canonicalHeaderKey]; ok {
+				filteredHeaders[canonicalHeaderKey] = values
+			}
+		}
+		filteredHeaders["Server"] = []string{"Ian's Proxy"}
+		return filteredHeaders
+	}
+}()

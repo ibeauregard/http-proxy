@@ -16,7 +16,7 @@ type CacheableResponse struct {
 }
 
 func (r *CacheableResponse) Store(cacheKey string) {
-	cacheLifespan := getCacheLifespan(r.Headers)
+	cacheLifespan := getCacheLifespan(r.Header)
 	if cacheLifespan == 0 {
 		return
 	}
@@ -39,7 +39,7 @@ func (r *CacheableResponse) writeToCache(f io.Writer) error {
 	if err := w.writeStatusLine(r.Proto, r.StatusCode); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
-	if err := w.writeHeaders(r.Headers); err != nil {
+	if err := w.writeHeaders(r.Header); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
 	if _, err := io.Copy(w, r.Body); err != nil {

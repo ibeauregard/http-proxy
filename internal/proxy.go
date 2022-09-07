@@ -43,8 +43,8 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 	writer.Header()["X-Cache"] = []string{"MISS"}
 
 	buf := &bytes.Buffer{}
-	response := h.NewResponse(resp.Proto, resp.StatusCode, getFilteredHeaders(resp.Header), io.TeeReader(resp.Body, buf))
-	response.Serve(writer)
+	response := h.NewResponse(resp)
+	response.WithNewBody(io.TeeReader(resp.Body, buf)).Serve(writer)
 	go store(response.WithNewBody(buf), cacheKey)
 }
 
@@ -52,24 +52,3 @@ func store(r *h.Response, cacheKey string) {
 	cr := &cache.CacheableResponse{Response: r}
 	cr.Store(cacheKey)
 }
-
-var getFilteredHeaders = func() func(http.Header) http.Header {
-	copiedHeaders := map[string]struct{}{
-		"Content-Type":  {},
-		"Cache-Control": {},
-		"Date":          {},
-		"Expires":       {},
-		"Set-Cookie":    {},
-	}
-	return func(responseHeaders http.Header) http.Header {
-		filteredHeaders := make(http.Header)
-		for name, values := range responseHeaders {
-			canonicalHeaderKey := http.CanonicalHeaderKey(name)
-			if _, ok := copiedHeaders[canonicalHeaderKey]; ok {
-				filteredHeaders[canonicalHeaderKey] = values
-			}
-		}
-		filteredHeaders["Server"] = []string{"Ian's Proxy"}
-		return filteredHeaders
-	}
-}()
