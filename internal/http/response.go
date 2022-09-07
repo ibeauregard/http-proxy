@@ -8,10 +8,15 @@ import (
 
 type Response struct {
 	*http.Response
+	Body
+}
+
+type Body struct {
+	io.ReadCloser
 }
 
 func NewResponse(r *http.Response) *Response {
-	resp := &Response{r}
+	resp := &Response{r, Body{r.Body}}
 	resp.Header = getFilteredHeaders(r.Header)
 	return resp
 }
@@ -27,14 +32,14 @@ func (r *Response) Serve(writer http.ResponseWriter) {
 }
 
 func (r *Response) WithNewBody(body io.Reader) *Response {
-	r.Body = io.NopCloser(body)
+	r.Body = Body{io.NopCloser(body)}
 	return r
 }
 
-func CloseResponseBody(body io.Closer) {
-	err := body.Close()
+func (b *Body) Close() {
+	err := b.ReadCloser.Close()
 	if err != nil {
-		errors.Log(CloseResponseBody, err)
+		errors.Log(b.Close, err)
 	}
 }
 

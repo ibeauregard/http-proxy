@@ -35,19 +35,19 @@ func serveFromCache(_ http.ResponseWriter, _ string) bool {
 }
 
 func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) {
-	resp, err := http.Get(requestUrl)
+	r, err := http.Get(requestUrl)
 	if err != nil {
 		errors.Log(serveFromUpstream, err)
 		return
 	}
-	defer h.CloseResponseBody(resp.Body)
+	resp := h.NewResponse(r)
+	defer resp.Body.Close()
 
 	writer.Header()["X-Cache"] = []string{"MISS"}
 
 	newBody := &bytes.Buffer{}
-	response := h.NewResponse(resp)
-	response.WithNewBody(io.TeeReader(resp.Body, newBody)).Serve(writer)
-	go store(response.WithNewBody(newBody), cacheKey)
+	resp.WithNewBody(io.TeeReader(r.Body, newBody)).Serve(writer)
+	go store(resp.WithNewBody(newBody), cacheKey)
 }
 
 func store(r *h.Response, cacheKey string) {
