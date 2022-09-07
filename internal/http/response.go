@@ -22,6 +22,7 @@ func NewResponse(r *http.Response) *Response {
 }
 
 func (r *Response) Serve(writer http.ResponseWriter) {
+	defer r.Body.Close()
 	writeHeaders(writer, r.Header)
 	writer.WriteHeader(r.StatusCode)
 

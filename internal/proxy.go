@@ -51,6 +51,7 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 }
 
 func store(r *h.Response, cacheKey string) {
+	defer r.Body.Close()
 	cr := &cache.CacheableResponse{Response: r}
 	cr.Store(cacheKey)
 }
