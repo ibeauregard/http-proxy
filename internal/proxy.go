@@ -44,10 +44,10 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 
 	writer.Header()["X-Cache"] = []string{"MISS"}
 
-	buf := &bytes.Buffer{}
+	newBody := &bytes.Buffer{}
 	response := h.NewResponse(resp)
-	response.WithNewBody(io.TeeReader(resp.Body, buf)).Serve(writer)
-	go store(response.WithNewBody(buf), cacheKey)
+	response.WithNewBody(io.TeeReader(resp.Body, newBody)).Serve(writer)
+	go store(response.WithNewBody(newBody), cacheKey)
 }
 
 func store(r *h.Response, cacheKey string) {
