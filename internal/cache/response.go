@@ -43,7 +43,7 @@ func (r *CacheableResponse) writeToCache(f io.Writer) error {
 	if err := w.writeHeaders(r.Header); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
-	if _, err := io.Copy(w, r.Body); err != nil {
+	if err := w.writeBody(r.Body); err != nil {
 		return errors.Format(r.writeToCache, err)
 	}
 	if err := w.Flush(); err != nil {
@@ -84,8 +84,8 @@ func (w *cacheEntryWriter) writeHeaders(headers http.Header) error {
 	return nil
 }
 
-func (w *cacheEntryWriter) writeBody(body []byte) error {
-	if _, err := w.Write(body); err != nil {
+func (w *cacheEntryWriter) writeBody(body io.Reader) error {
+	if _, err := io.Copy(w, body); err != nil {
 		return errors.Format(w.writeBody, err)
 	}
 	return nil
