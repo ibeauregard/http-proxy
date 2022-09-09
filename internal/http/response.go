@@ -8,7 +8,7 @@ import (
 
 type Response struct {
 	*http.Response
-	Body
+	*Body
 }
 
 type Body struct {
@@ -16,13 +16,12 @@ type Body struct {
 }
 
 func NewResponse(r *http.Response) *Response {
-	resp := &Response{r, Body{r.Body}}
+	resp := &Response{r, &Body{r.Body}}
 	resp.Header = getFilteredHeaders(r.Header)
 	return resp
 }
 
 func (r *Response) Serve(writer http.ResponseWriter) {
-	defer r.Body.Close()
 	writeHeaders(writer, r.Header)
 	writer.WriteHeader(r.StatusCode)
 
@@ -33,7 +32,7 @@ func (r *Response) Serve(writer http.ResponseWriter) {
 }
 
 func (r *Response) WithNewBody(body io.Reader) *Response {
-	r.Body = Body{io.NopCloser(body)}
+	r.Body = &Body{io.NopCloser(body)}
 	return r
 }
 

@@ -30,8 +30,13 @@ func validateRequestMethod(writer http.ResponseWriter, requestMethod string) boo
 	return true
 }
 
-func serveFromCache(_ http.ResponseWriter, _ string) bool {
-	return false
+func serveFromCache(writer http.ResponseWriter, cacheKey string) bool {
+	resp := cache.Retrieve(cacheKey)
+	if resp == nil {
+		return false
+	}
+	resp.Serve(writer)
+	return true
 }
 
 func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) {
@@ -45,13 +50,13 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 
 	writer.Header()["X-Cache"] = []string{"MISS"}
 
+	// TODO: try using io.Pipe() here instead of a byte buffer
 	newBody := &bytes.Buffer{}
 	resp.WithNewBody(io.TeeReader(r.Body, newBody)).Serve(writer)
 	go store(resp.WithNewBody(newBody), cacheKey)
 }
 
 func store(r *h.Response, cacheKey string) {
-	defer r.Body.Close()
 	cr := &cache.CacheableResponse{Response: r}
 	cr.Store(cacheKey)
 }

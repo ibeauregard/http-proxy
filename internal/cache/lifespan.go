@@ -55,21 +55,29 @@ func (evaluator *cacheLifespanEvaluator) getLifespanFromCacheControlHeader() tim
 
 func (evaluator *cacheLifespanEvaluator) getLifespanFromExpiresHeader() time.Duration {
 	for _, value := range evaluator.headers["Expires"] {
-		if lifespan := getLifespanFromStringValue(value); lifespan > 0 {
+		if lifespan := getDurationUntilTimestamp(value); lifespan > 0 {
 			return lifespan
 		}
 	}
 	return 0
 }
 
-var getLifespanFromStringValue = func() func(string) time.Duration {
+func getDurationUntilTimestamp(timestamp string) time.Duration {
+	return GetDurationRelativeToTimestamp(timestamp, time.Until)
+}
+
+func GetDurationSinceTimestamp(timestamp string) time.Duration {
+	return GetDurationRelativeToTimestamp(timestamp, time.Since)
+}
+
+var GetDurationRelativeToTimestamp = func() func(string, func(time.Time) time.Duration) time.Duration {
 	httpTimestampFormats := []string{time.RFC1123, time.RFC850, time.ANSIC}
-	return func(value string) time.Duration {
+	return func(value string, timeDeltaFunction func(time.Time) time.Duration) time.Duration {
 		// See RFC 7231, section 7.1.1.1
 		// https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.1
 		for _, layout := range httpTimestampFormats {
-			if expireTime, err := time.Parse(layout, value); err == nil {
-				return time.Until(expireTime)
+			if datetime, err := time.Parse(layout, value); err == nil {
+				return timeDeltaFunction(datetime)
 			}
 		}
 		return 0

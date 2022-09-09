@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -17,4 +18,8 @@ func Format(function any, err error) error {
 
 func getFunctionName(function any) string {
 	return runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
+}
+
+func New(text string) error {
+	return errors.New(text)
 }
