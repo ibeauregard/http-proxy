@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"io"
 	"my_proxy/internal/cache"
 	"my_proxy/internal/errors"
@@ -50,10 +49,10 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 
 	writer.Header()["X-Cache"] = []string{"MISS"}
 
-	// TODO: try using io.Pipe() here instead of a byte buffer
-	newBody := &bytes.Buffer{}
-	resp.WithNewBody(io.TeeReader(r.Body, newBody)).Serve(writer)
-	go store(resp.WithNewBody(newBody), cacheKey)
+	newBodyReader, newBodyWriter := io.Pipe()
+	defer func() { _ = newBodyWriter.Close() }()
+	go store(resp.WithNewBody(newBodyReader), cacheKey)
+	resp.WithNewBody(io.NopCloser(io.TeeReader(r.Body, newBodyWriter))).Serve(writer)
 }
 
 func store(r *h.Response, cacheKey string) {

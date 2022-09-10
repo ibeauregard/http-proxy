@@ -11,6 +11,7 @@ type Response struct {
 	*Body
 }
 
+// Body TODO: really need a ReadCloser here or is Reader enough?
 type Body struct {
 	io.ReadCloser
 }
@@ -22,6 +23,7 @@ func NewResponse(r *http.Response) *Response {
 }
 
 func (r *Response) Serve(writer http.ResponseWriter) {
+	// TODO: need to close r.Body here?
 	writeHeaders(writer, r.Header)
 	writer.WriteHeader(r.StatusCode)
 
@@ -31,11 +33,11 @@ func (r *Response) Serve(writer http.ResponseWriter) {
 	}
 }
 
-func (r *Response) WithNewBody(body io.Reader) *Response {
-	r.Body = &Body{io.NopCloser(body)}
-	return r
+func (r *Response) WithNewBody(body io.ReadCloser) *Response {
+	return &Response{r.Response, &Body{body}}
 }
 
+// Close TODO: write a new closer type
 func (b *Body) Close() {
 	err := b.ReadCloser.Close()
 	if err != nil {
