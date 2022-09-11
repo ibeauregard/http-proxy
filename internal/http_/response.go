@@ -1,4 +1,4 @@
-package http
+package http_
 
 import (
 	"io"
@@ -36,10 +36,8 @@ func (r *Response) WithNewBody(body io.ReadCloser) *Response {
 	return &Response{r.Response, &Body{body}}
 }
 
-// Close TODO: write a new closer type
 func (b *Body) Close() {
-	err := b.ReadCloser.Close()
-	if err != nil {
+	if err := b.ReadCloser.Close(); err != nil {
 		errors.Log(b.Close, err)
 	}
 }

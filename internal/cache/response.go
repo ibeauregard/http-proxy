@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"io"
 	"my_proxy/internal/errors"
-	h "my_proxy/internal/http"
+	"my_proxy/internal/http_"
 	"net/http"
 	"regexp"
 	"strconv"
 )
 
 type CacheableResponse struct {
-	*h.Response
+	*http_.Response
 }
 
 func (r *CacheableResponse) Store(cacheKey string) {
@@ -36,7 +36,7 @@ func (r *CacheableResponse) Store(cacheKey string) {
 }
 
 // Retrieve TODO: might need to acquire locks here
-func Retrieve(cacheKey string) *h.Response {
+func Retrieve(cacheKey string) *http_.Response {
 	cacheFile := newCacheFile(cacheKey)
 	openCacheFile, err := cacheFile.open()
 	if err != nil {
@@ -106,7 +106,7 @@ func (w *cacheEntryWriter) writeBody(body io.Reader) error {
 }
 
 type cacheResponseBuilder struct {
-	response *h.Response
+	response *http_.Response
 	reader   *cacheEntryReader
 	error    bool
 }
@@ -117,7 +117,7 @@ type cacheEntryReader struct {
 }
 
 func newCacheResponseBuilder(readCloser io.ReadCloser) *cacheResponseBuilder {
-	return &cacheResponseBuilder{response: &h.Response{
+	return &cacheResponseBuilder{response: &http_.Response{
 		Response: &http.Response{},
 	}, reader: &cacheEntryReader{
 		Reader: bufio.NewReader(readCloser),
@@ -194,11 +194,11 @@ func (b *cacheResponseBuilder) setBody() *cacheResponseBuilder {
 	if b.error {
 		return b
 	}
-	b.response.Body = &h.Body{ReadCloser: b.reader}
+	b.response.Body = &http_.Body{ReadCloser: b.reader}
 	return b
 }
 
-func (b *cacheResponseBuilder) build() *h.Response {
+func (b *cacheResponseBuilder) build() *http_.Response {
 	if b.error {
 		return nil
 	}

@@ -4,7 +4,7 @@ import (
 	"io"
 	"my_proxy/internal/cache"
 	"my_proxy/internal/errors"
-	h "my_proxy/internal/http"
+	"my_proxy/internal/http_"
 	"net/http"
 )
 
@@ -44,7 +44,7 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 		errors.Log(serveFromUpstream, err)
 		return
 	}
-	resp := h.NewResponse(r)
+	resp := http_.NewResponse(r)
 	defer resp.Body.Close()
 
 	writer.Header()["X-Cache"] = []string{"MISS"}
@@ -55,7 +55,7 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 	resp.WithNewBody(io.NopCloser(io.TeeReader(r.Body, newBodyWriter))).Serve(writer)
 }
 
-func store(r *h.Response, cacheKey string) {
+func store(r *http_.Response, cacheKey string) {
 	cr := &cache.CacheableResponse{Response: r}
 	cr.Store(cacheKey)
 }
