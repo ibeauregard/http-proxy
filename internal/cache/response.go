@@ -107,14 +107,22 @@ func (w *cacheEntryWriter) writeBody(body io.Reader) error {
 
 type cacheResponseBuilder struct {
 	response *h.Response
-	reader   *bufio.Reader
+	reader   *cacheEntryReader
 	error    bool
 }
 
-func newCacheResponseBuilder(reader io.Reader) *cacheResponseBuilder {
+type cacheEntryReader struct {
+	*bufio.Reader
+	io.Closer
+}
+
+func newCacheResponseBuilder(readCloser io.ReadCloser) *cacheResponseBuilder {
 	return &cacheResponseBuilder{response: &h.Response{
 		Response: &http.Response{},
-	}, reader: bufio.NewReader(reader)}
+	}, reader: &cacheEntryReader{
+		Reader: bufio.NewReader(readCloser),
+		Closer: readCloser,
+	}}
 }
 
 // TODO: refactor
@@ -186,7 +194,7 @@ func (b *cacheResponseBuilder) setBody() *cacheResponseBuilder {
 	if b.error {
 		return b
 	}
-	b.response.Body = &h.Body{ReadCloser: io.NopCloser(b.reader)}
+	b.response.Body = &h.Body{ReadCloser: b.reader}
 	return b
 }
 
