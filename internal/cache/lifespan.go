@@ -55,22 +55,22 @@ func (evaluator *cacheLifespanEvaluator) getLifespanFromCacheControlHeader() tim
 
 func (evaluator *cacheLifespanEvaluator) getLifespanFromExpiresHeader() time.Duration {
 	for _, value := range evaluator.headers["Expires"] {
-		if lifespan := getDurationUntilTimestamp(value); lifespan > 0 {
+		if lifespan := GetDurationUntilTimestamp(value); lifespan > 0 {
 			return lifespan
 		}
 	}
 	return 0
 }
 
-func getDurationUntilTimestamp(timestamp string) time.Duration {
-	return GetDurationRelativeToTimestamp(timestamp, time.Until)
+func GetDurationUntilTimestamp(timestamp string) time.Duration {
+	return getDurationRelativeToTimestamp(timestamp, time.Until)
 }
 
 func GetDurationSinceTimestamp(timestamp string) time.Duration {
-	return GetDurationRelativeToTimestamp(timestamp, time.Since)
+	return getDurationRelativeToTimestamp(timestamp, time.Since)
 }
 
-var GetDurationRelativeToTimestamp = func() func(string, func(time.Time) time.Duration) time.Duration {
+var getDurationRelativeToTimestamp = func() func(string, func(time.Time) time.Duration) time.Duration {
 	httpTimestampFormats := []string{time.RFC1123, time.RFC850, time.ANSIC}
 	return func(value string, timeDeltaFunction func(time.Time) time.Duration) time.Duration {
 		// See RFC 7231, section 7.1.1.1
