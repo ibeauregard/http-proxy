@@ -14,5 +14,8 @@ run:
 
 restart: stop run
 
+connect:
+	docker exec -it $(app_name)_container sh
+
 stop:
 	@docker rm -f $(app_name)_container &>/dev/null && echo "Stopped any existing container"
