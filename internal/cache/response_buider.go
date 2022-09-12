@@ -26,7 +26,7 @@ func newCacheResponseBuilder(readCloser io.ReadCloser) *cacheResponseBuilder {
 }
 
 func (b *cacheResponseBuilder) setStatusCode() *cacheResponseBuilder {
-	firstLine, err := getFirstLine(b.reader)
+	firstLine, err := getLine(b.reader)
 	if err != nil {
 		return b.withErrorStatus()
 	}
@@ -91,13 +91,13 @@ type byteSliceReader interface {
 	ReadBytes(delim byte) ([]byte, error)
 }
 
-func getFirstLine(reader byteSliceReader) ([]byte, error) {
-	firstLine, err := reader.ReadBytes('\n')
+func getLine(reader byteSliceReader) ([]byte, error) {
+	line, err := reader.ReadBytes('\n')
 	if err != nil {
-		errors.Log(getFirstLine, errors.New("unexpected end of cache entry"))
+		errors.Log(getLine, errors.New("unexpected end of cache entry"))
 		return nil, err
 	}
-	return firstLine, nil
+	return line, nil
 }
 
 var statusCodeRegexp = regexp.MustCompile(`\b\d{3}\b`)
