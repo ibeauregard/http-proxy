@@ -28,8 +28,7 @@ func newCacheResponseBuilder(readCloser io.ReadCloser) *cacheResponseBuilder {
 func (b *cacheResponseBuilder) setStatusCode() *cacheResponseBuilder {
 	firstLine, err := getFirstLine(b.reader)
 	if err != nil {
-		b.error = true
-		return b
+		return b.withErrorStatus()
 	}
 	b.response.StatusCode, err = getStatusCode(firstLine)
 	b.error = err != nil
@@ -45,31 +44,25 @@ func (b *cacheResponseBuilder) setHeaders() *cacheResponseBuilder {
 	line, err := b.reader.ReadString('\n')
 	if err != nil {
 		errors.Log(b.setHeaders, err)
-		b.error = true
-		return b
+		return b.withErrorStatus()
 	}
 	b.response.Header = make(map[string][]string)
 	for line != "\r\n" {
-		headerParts := headerMatchingRegexp.FindStringSubmatch(line)
-		if headerParts == nil {
-			errors.Log(b.setHeaders, errors.New("malformed header in cache entry"))
-			b.error = true
-			return b
+		err = setHeader(b.response.Header, line)
+		if err != nil {
+			errors.Log(b.setHeaders, err)
+			return b.withErrorStatus()
 		}
-		key, value := headerParts[1], headerParts[2]
-		canonicalKey := http.CanonicalHeaderKey(key)
-		b.response.Header[canonicalKey] = append(b.response.Header[canonicalKey], value)
 		line, err = b.reader.ReadString('\n')
 		if err != nil {
 			errors.Log(b.setHeaders, err)
-			b.error = true
-			return b
+			return b.withErrorStatus()
 		}
 	}
 	err = addAgeHeader(b.response.Header)
 	if err != nil {
 		errors.Log(b.setHeaders, err)
-		b.error = true
+		return b.withErrorStatus()
 	}
 	return b
 }
@@ -87,6 +80,11 @@ func (b *cacheResponseBuilder) build() *http_.Response {
 		return nil
 	}
 	return b.response
+}
+
+func (b *cacheResponseBuilder) withErrorStatus() *cacheResponseBuilder {
+	b.error = true
+	return b
 }
 
 type byteSliceReader interface {
@@ -113,6 +111,17 @@ func getStatusCode(firstLine []byte) (int, error) {
 		return 0, err
 	}
 	return statusCode, nil
+}
+
+func setHeader(headers http.Header, line string) error {
+	headerParts := headerMatchingRegexp.FindStringSubmatch(line)
+	if headerParts == nil {
+		return errors.Format(setHeader, errors.New("malformed header in cache entry"))
+	}
+	key, value := headerParts[1], headerParts[2]
+	canonicalKey := http.CanonicalHeaderKey(key)
+	headers[canonicalKey] = append(headers[canonicalKey], value)
+	return nil
 }
 
 func addAgeHeader(headers http.Header) error {
