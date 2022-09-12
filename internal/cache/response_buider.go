@@ -61,6 +61,8 @@ func (b *cacheResponseBuilder) setHeaders() *cacheResponseBuilder {
 		line, err = b.reader.ReadString('\n')
 		if err != nil {
 			errors.Log(b.setHeaders, err)
+			b.error = true
+			return b
 		}
 	}
 	dates, ok := b.response.Header[http.CanonicalHeaderKey("Date")]
