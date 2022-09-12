@@ -36,7 +36,8 @@ func (b *cacheResponseBuilder) setStatusCode() *cacheResponseBuilder {
 	return b
 }
 
-// TODO: refactor
+var headerMatchingRegexp = regexp.MustCompile(`([-\w]+)\s*:\s*(.*\S)`)
+
 func (b *cacheResponseBuilder) setHeaders() *cacheResponseBuilder {
 	if b.error {
 		return b
@@ -49,7 +50,7 @@ func (b *cacheResponseBuilder) setHeaders() *cacheResponseBuilder {
 	}
 	b.response.Header = make(map[string][]string)
 	for line != "\r\n" {
-		headerParts := regexp.MustCompile(`([-\w]+)\s*:\s*(.*\S)`).FindStringSubmatch(line)
+		headerParts := headerMatchingRegexp.FindStringSubmatch(line)
 		if headerParts == nil {
 			errors.Log(b.setHeaders, errors.New("malformed header in cache entry"))
 			b.error = true
@@ -106,8 +107,10 @@ func getFirstLine(reader byteSliceReader) ([]byte, error) {
 	return firstLine, nil
 }
 
+var statusCodeRegexp = regexp.MustCompile(`\b\d{3}\b`)
+
 func getStatusCode(firstLine []byte) (int, error) {
-	decimalStatusCode := regexp.MustCompile(`\b\d{3}\b`).Find(firstLine)
+	decimalStatusCode := statusCodeRegexp.Find(firstLine)
 	statusCode, err := strconv.Atoi(string(decimalStatusCode))
 	if err != nil {
 		errors.Log(getStatusCode, errors.New(

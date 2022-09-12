@@ -29,18 +29,22 @@ func (evaluator *cacheLifespanEvaluator) setCookieHeaderIsPresent() bool {
 	return ok
 }
 
+var cacheControlHeaderPreventingCachingRegexp = regexp.MustCompile(`(?i)private|no-cache|no-store`)
+
 func (evaluator *cacheLifespanEvaluator) cacheControlHeaderPreventsCaching() bool {
 	for _, value := range evaluator.headers["Cache-Control"] {
-		if regexp.MustCompile(`(?i)private|no-cache|no-store`).FindString(value) != "" {
+		if cacheControlHeaderPreventingCachingRegexp.FindString(value) != "" {
 			return true
 		}
 	}
 	return false
 }
 
+var maxAgeDirectiveRegexp = regexp.MustCompile(`(?i)max-age=\d+`)
+
 func (evaluator *cacheLifespanEvaluator) getLifespanFromCacheControlHeader() time.Duration {
 	for _, value := range evaluator.headers["Cache-Control"] {
-		maxAgeDirective := regexp.MustCompile(`(?i)max-age=\d+`).FindString(value)
+		maxAgeDirective := maxAgeDirectiveRegexp.FindString(value)
 		if maxAgeDirective == "" {
 			continue
 		}
