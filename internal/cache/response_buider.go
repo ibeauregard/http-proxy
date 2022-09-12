@@ -25,23 +25,14 @@ func newCacheResponseBuilder(readCloser io.ReadCloser) *cacheResponseBuilder {
 	}}
 }
 
-// TODO: refactor
 func (b *cacheResponseBuilder) setStatusCode() *cacheResponseBuilder {
-	firstLine, err := b.reader.ReadBytes('\n')
+	firstLine, err := getFirstLine(b.reader)
 	if err != nil {
-		errors.Log(b.setStatusCode, errors.New("unexpected end of cache entry"))
 		b.error = true
 		return b
 	}
-	decimalStatusCode := regexp.MustCompile(`\b\d{3}\b`).Find(firstLine)
-	statusCode, err := strconv.Atoi(string(decimalStatusCode))
-	if err != nil {
-		errors.Log(b.setStatusCode, errors.New(
-			"first line of the cache entry does not contain a valid HTTP response status code"))
-		b.error = true
-		return b
-	}
-	b.response.StatusCode = statusCode
+	b.response.StatusCode, err = getStatusCode(firstLine)
+	b.error = err != nil
 	return b
 }
 
@@ -98,6 +89,30 @@ func (b *cacheResponseBuilder) build() *http_.Response {
 		return nil
 	}
 	return b.response
+}
+
+type byteSliceReader interface {
+	ReadBytes(delim byte) ([]byte, error)
+}
+
+func getFirstLine(reader byteSliceReader) ([]byte, error) {
+	firstLine, err := reader.ReadBytes('\n')
+	if err != nil {
+		errors.Log(getFirstLine, errors.New("unexpected end of cache entry"))
+		return nil, err
+	}
+	return firstLine, nil
+}
+
+func getStatusCode(firstLine []byte) (int, error) {
+	decimalStatusCode := regexp.MustCompile(`\b\d{3}\b`).Find(firstLine)
+	statusCode, err := strconv.Atoi(string(decimalStatusCode))
+	if err != nil {
+		errors.Log(getStatusCode, errors.New(
+			"first line of the cache entry does not contain a valid HTTP response status code"))
+		return 0, err
+	}
+	return statusCode, nil
 }
 
 func getEntryAge(dateTimestamp string) string {
