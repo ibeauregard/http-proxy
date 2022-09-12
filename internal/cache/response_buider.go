@@ -67,7 +67,7 @@ func (b *cacheResponseBuilder) setCachedHeaders() error {
 		return err
 	}
 	b.response.Header = make(map[string][]string)
-	for line != "\r\n" {
+	for line != crlf {
 		if err = setHeader(b.response.Header, line); err != nil {
 			errors.Log(b.setHeaders, err)
 			return err
