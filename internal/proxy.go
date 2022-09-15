@@ -2,11 +2,14 @@ package main
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"my_proxy/internal/cache"
-	"my_proxy/internal/errors"
+	"my_proxy/internal/errors_"
 	"my_proxy/internal/http_"
 	"net/http"
+	"net/url"
 )
 
 func myProxy(writer http.ResponseWriter, request *http.Request) {
@@ -42,7 +45,7 @@ func serveFromCache(writer http.ResponseWriter, cacheKey string) bool {
 func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) {
 	r, err := http.Get(requestUrl)
 	if err != nil {
-		errors.Log(serveFromUpstream, err)
+		handleUpstreamGetError(writer, err)
 		return
 	}
 	resp := http_.NewResponse(r)
@@ -58,4 +61,22 @@ func serveFromUpstream(writer http.ResponseWriter, requestUrl, cacheKey string) 
 func store(r *http_.Response, cacheKey string) {
 	cr := &cache.CacheableResponse{Response: r}
 	cr.Store(cacheKey)
+}
+
+func handleUpstreamGetError(writer http.ResponseWriter, err error) {
+	var (
+		urlError   *url.Error
+		statusCode int
+	)
+	if errors.As(err, &urlError) {
+		statusCode = http.StatusBadRequest
+	} else {
+		statusCode = http.StatusInternalServerError
+		errors_.Log(serveFromUpstream, err)
+	}
+	writer.WriteHeader(statusCode)
+	_, err = fmt.Fprint(writer, err)
+	if err != nil {
+		errors_.Log(handleUpstreamGetError, err)
+	}
 }

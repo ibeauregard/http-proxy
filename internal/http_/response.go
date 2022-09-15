@@ -2,7 +2,7 @@ package http_
 
 import (
 	"io"
-	"my_proxy/internal/errors"
+	"my_proxy/internal/errors_"
 	"net/http"
 )
 
@@ -28,7 +28,7 @@ func (r *Response) Serve(writer http.ResponseWriter) {
 
 	_, err := io.Copy(writer, r.Body)
 	if err != nil {
-		errors.Log(r.Serve, err)
+		errors_.Log(r.Serve, err)
 	}
 }
 
@@ -42,7 +42,7 @@ func (r *Response) WithNewBody(body io.Reader) *Response {
 
 func (b *Body) Close() {
 	if err := b.ReadCloser.Close(); err != nil {
-		errors.Log(b.Close, err)
+		errors_.Log(b.Close, err)
 	}
 }
 

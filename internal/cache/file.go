@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"my_proxy/internal/errors"
+	"my_proxy/internal/errors_"
 	"os"
 	"path/filepath"
 	"time"
@@ -18,7 +18,7 @@ func newCacheFile(cacheKey string) *cacheFile {
 func (f *cacheFile) create() (*file, error) {
 	osFile, err := os.Create(f.path)
 	if err != nil {
-		errors.Log(f.create, err)
+		errors_.Log(f.create, err)
 	}
 	return &file{osFile}, err
 }
@@ -33,7 +33,7 @@ func (f *cacheFile) open() (*file, error) {
 
 func (f *cacheFile) delete() {
 	if err := os.Remove(f.path); err != nil {
-		errors.Log(f.delete, err)
+		errors_.Log(f.delete, err)
 	}
 }
 
@@ -49,6 +49,6 @@ type file struct {
 
 func (f *file) close() {
 	if err := f.File.Close(); err != nil {
-		errors.Log(f.close, err)
+		errors_.Log(f.close, err)
 	}
 }

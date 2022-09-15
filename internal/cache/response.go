@@ -3,7 +3,7 @@ package cache
 import (
 	"bufio"
 	"io"
-	"my_proxy/internal/errors"
+	"my_proxy/internal/errors_"
 	"my_proxy/internal/http_"
 )
 
@@ -19,12 +19,12 @@ func (r *CacheableResponse) Store(cacheKey string) {
 	cacheFile := newCacheFile(cacheKey)
 	openCacheFile, err := cacheFile.create()
 	if err != nil {
-		errors.Log(r.Store, err)
+		errors_.Log(r.Store, err)
 		return
 	}
 	defer openCacheFile.close()
 	if err = r.writeToCache(openCacheFile); err != nil {
-		errors.Log(r.Store, err)
+		errors_.Log(r.Store, err)
 		cacheFile.delete()
 		return
 	}
@@ -47,16 +47,16 @@ func Retrieve(cacheKey string) *http_.Response {
 func (r *CacheableResponse) writeToCache(f io.Writer) error {
 	w := cacheEntryWriter{bufio.NewWriter(f)}
 	if err := w.writeStatusLine(r.Proto, r.StatusCode); err != nil {
-		return errors.Format(r.writeToCache, err)
+		return errors_.Format(r.writeToCache, err)
 	}
 	if err := w.writeHeaders(r.Header); err != nil {
-		return errors.Format(r.writeToCache, err)
+		return errors_.Format(r.writeToCache, err)
 	}
 	if err := w.writeBody(r.Body); err != nil {
-		return errors.Format(r.writeToCache, err)
+		return errors_.Format(r.writeToCache, err)
 	}
 	if err := w.Flush(); err != nil {
-		return errors.Format(r.writeToCache, err)
+		return errors_.Format(r.writeToCache, err)
 	}
 	return nil
 }
