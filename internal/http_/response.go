@@ -32,8 +32,12 @@ func (r *Response) Serve(writer http.ResponseWriter) {
 	}
 }
 
-func (r *Response) WithNewBody(body io.ReadCloser) *Response {
-	return &Response{r.Response, &Body{body}}
+func (r *Response) WithNewBody(body io.Reader) *Response {
+	readCloserBody, ok := body.(io.ReadCloser)
+	if !ok {
+		readCloserBody = io.NopCloser(body)
+	}
+	return &Response{r.Response, &Body{readCloserBody}}
 }
 
 func (b *Body) Close() {
