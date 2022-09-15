@@ -17,5 +17,8 @@ restart: stop run
 connect:
 	docker exec -it $(app_name)_container sh
 
+clear-cache:
+	docker exec -it $(app_name)_container sh -c "rm -f $(cache_dir_name)/*"
+
 stop:
 	@docker rm -f $(app_name)_container &>/dev/null && echo "Stopped any existing container"
