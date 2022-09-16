@@ -11,8 +11,10 @@ type cacheFile struct {
 	path string
 }
 
+var cacheDirName = os.Getenv("CACHE_DIR_NAME")
+
 func newCacheFile(cacheKey string) *cacheFile {
-	return &cacheFile{filepath.Join(os.Getenv("CACHE_DIR_NAME"), cacheKey)}
+	return &cacheFile{filepath.Join(cacheDirName, cacheKey)}
 }
 
 func (f *cacheFile) create() (*file, error) {
