@@ -52,23 +52,22 @@ func writeHeaders(writer http.ResponseWriter, headers http.Header) {
 	}
 }
 
-var getFilteredHeaders = func() func(http.Header) http.Header {
-	copiedHeaders := map[string]struct{}{
-		"Content-Type":  {},
-		"Cache-Control": {},
-		"Date":          {},
-		"Expires":       {},
-		"Set-Cookie":    {},
-	}
-	return func(responseHeaders http.Header) http.Header {
-		filteredHeaders := make(http.Header)
-		for name, values := range responseHeaders {
-			canonicalHeaderKey := http.CanonicalHeaderKey(name)
-			if _, ok := copiedHeaders[canonicalHeaderKey]; ok {
-				filteredHeaders[canonicalHeaderKey] = values
-			}
+var copiedHeaders = map[string]struct{}{
+	"Content-Type":  {},
+	"Cache-Control": {},
+	"Date":          {},
+	"Expires":       {},
+	"Set-Cookie":    {},
+}
+
+func getFilteredHeaders(responseHeaders http.Header) http.Header {
+	filteredHeaders := make(http.Header)
+	for name, values := range responseHeaders {
+		canonicalHeaderKey := http.CanonicalHeaderKey(name)
+		if _, ok := copiedHeaders[canonicalHeaderKey]; ok {
+			filteredHeaders[canonicalHeaderKey] = values
 		}
-		filteredHeaders["Server"] = []string{"Ian's Proxy"}
-		return filteredHeaders
 	}
-}()
+	filteredHeaders["Server"] = []string{"Ian's Proxy"}
+	return filteredHeaders
+}

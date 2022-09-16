@@ -74,16 +74,15 @@ func GetDurationSinceTimestamp(timestamp string) time.Duration {
 	return getDurationRelativeToTimestamp(timestamp, time.Since)
 }
 
-var getDurationRelativeToTimestamp = func() func(string, func(time.Time) time.Duration) time.Duration {
-	httpTimestampFormats := []string{time.RFC1123, time.RFC850, time.ANSIC}
-	return func(value string, timeDeltaFunction func(time.Time) time.Duration) time.Duration {
-		// See RFC 7231, section 7.1.1.1
-		// https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.1
-		for _, layout := range httpTimestampFormats {
-			if datetime, err := time.Parse(layout, value); err == nil {
-				return timeDeltaFunction(datetime)
-			}
+var httpTimestampFormats = []string{time.RFC1123, time.RFC850, time.ANSIC}
+
+func getDurationRelativeToTimestamp(value string, timeDeltaFunction func(time.Time) time.Duration) time.Duration {
+	// See RFC 7231, section 7.1.1.1
+	// https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.1
+	for _, layout := range httpTimestampFormats {
+		if datetime, err := time.Parse(layout, value); err == nil {
+			return timeDeltaFunction(datetime)
 		}
-		return 0
 	}
-}()
+	return 0
+}
