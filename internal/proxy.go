@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"my_proxy/internal/cache"
 	"my_proxy/internal/errors_"
@@ -74,9 +73,5 @@ func handleUpstreamGetError(writer http.ResponseWriter, err error) {
 		statusCode = http.StatusInternalServerError
 		errors_.Log(serveFromUpstream, err)
 	}
-	writer.WriteHeader(statusCode)
-	_, err = fmt.Fprint(writer, err)
-	if err != nil {
-		errors_.Log(handleUpstreamGetError, err)
-	}
+	http.Error(writer, err.Error(), statusCode)
 }
