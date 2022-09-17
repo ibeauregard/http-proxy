@@ -59,18 +59,18 @@ func (evaluator *cacheLifespanEvaluator) getLifespanFromCacheControlHeader() tim
 
 func (evaluator *cacheLifespanEvaluator) getLifespanFromExpiresHeader() time.Duration {
 	for _, value := range evaluator.headers["Expires"] {
-		if lifespan := GetDurationUntilTimestamp(value); lifespan > 0 {
+		if lifespan := getDurationUntilTimestamp(value); lifespan > 0 {
 			return lifespan
 		}
 	}
 	return 0
 }
 
-func GetDurationUntilTimestamp(timestamp string) time.Duration {
+func getDurationUntilTimestamp(timestamp string) time.Duration {
 	return getDurationRelativeToTimestamp(timestamp, time.Until)
 }
 
-func GetDurationSinceTimestamp(timestamp string) time.Duration {
+func getDurationSinceTimestamp(timestamp string) time.Duration {
 	return getDurationRelativeToTimestamp(timestamp, time.Since)
 }
 

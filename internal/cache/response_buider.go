@@ -143,6 +143,6 @@ func addAgeHeader(headers http.Header) error {
 }
 
 func getEntryAge(dateTimestamp string) string {
-	age := GetDurationSinceTimestamp(dateTimestamp)
+	age := getDurationSinceTimestamp(dateTimestamp)
 	return strconv.Itoa(int(age.Seconds()))
 }
