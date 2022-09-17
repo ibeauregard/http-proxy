@@ -1,20 +1,22 @@
 package cache
 
-var index = set{map_: map[any]struct{}{}}
+import "sync"
+
+var index = set{map_: &sync.Map{}}
 
 type set struct {
-	map_ map[any]struct{}
+	map_ *sync.Map
 }
 
 func (s *set) contains(e any) bool {
-	_, ok := s.map_[e]
+	_, ok := s.map_.Load(e)
 	return ok
 }
 
 func (s *set) add(e any) {
-	s.map_[e] = struct{}{}
+	s.map_.Store(e, struct{}{})
 }
 
 func (s *set) remove(e any) {
-	delete(s.map_, e)
+	s.map_.Delete(e)
 }
