@@ -17,13 +17,12 @@ func (r *CacheableResponse) Store(cacheKey string) {
 		return
 	}
 	cacheFile := newCacheFile(cacheKey)
-	openCacheFile, err := cacheFile.create()
-	if err != nil {
-		errors_.Log(r.Store, err)
+	openCacheFile := cacheFile.create()
+	if openCacheFile == nil {
 		return
 	}
 	defer openCacheFile.close()
-	if err = r.writeToCache(openCacheFile); err != nil {
+	if err := r.writeToCache(openCacheFile); err != nil {
 		errors_.Log(r.Store, err)
 		cacheFile.delete()
 		return
@@ -33,8 +32,8 @@ func (r *CacheableResponse) Store(cacheKey string) {
 
 func Retrieve(cacheKey string) *http_.Response {
 	cacheFile := newCacheFile(cacheKey)
-	openCacheFile, err := cacheFile.open()
-	if err != nil {
+	openCacheFile := cacheFile.open()
+	if openCacheFile == nil {
 		return nil
 	}
 	return newCacheResponseBuilder(openCacheFile).
