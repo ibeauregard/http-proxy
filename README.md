@@ -61,7 +61,7 @@ The HTTP Proxy caches a response if and only if all following conditions are ful
 
 The HTTP Proxy's cache lives inside a dedicated directory on the server. Each cache entry corresponds to a file in that directory.
 
-When an upstream response is deemed cacheable (see [section How does the proxy determine what is cached and what is not?](#how-does-the-proxy-determine-what-is-cached-and-what-is-not) above), a new file is created in the cache directory. The file name is simply the [MD5 checksum](https://en.wikipedia.org/wiki/MD5) of the URL request by the client. The status line, headers and body are then written to that file.
+When an upstream response is deemed cacheable (see [section How does the proxy determine what is cached and what is not?](#how-does-the-proxy-determine-what-is-cached-and-what-is-not) above), a new file is created in the cache directory. The file name is simply the [MD5 checksum](https://en.wikipedia.org/wiki/MD5) of the URL requested by the client. The status line, headers and body are then written to that file.
 
 When an entry is committed to cache, its lifespan is already known, because it can be determined either from the Cache-Control header or from the Expires headers. So we can already schedule the deletion of the cache entry with the help of Go's [time.AfterFunc](https://pkg.go.dev/time#AfterFunc), which waits for the specified time to elapse and then calls the specified function in its own goroutine. Note that because the goroutine is only created when the deferred function needs to be executed, this method does not waste resources.
 
@@ -79,7 +79,7 @@ The second way to deal with the streaming nature of the response body involves o
 
 The first solution is arguably more elegant and does not use more memory. However, because the write and read operations of the pipe are synchronous, this means that the response cannot be served to the client until the cache file is fully written to. This seems like an unnecessary delay.
 
-The second solution does consume memory, in order to store the response body in a buffer. But, with this solution, the response goroutine has no temporal dependency on the caching goroutine (response is never going to wait for caching to proceed), which seems preferable.
+The second solution does consume memory, in order to store the response body in a buffer. But, with this solution, the response goroutine has no temporal dependency on the caching goroutine (the response is never going to wait for caching to proceed), which seems preferable.
 
 We elected to go with the second solution (see function serveFromUpstream in internal/proxy.go), pending a better, more refined approach.
 
@@ -92,8 +92,8 @@ Only the following headers from upstream are kept:
 - Expired
 - Set-Cookie
 
-A custom server header is added to all responses.
+A custom server header is also added to all responses.
 
-Also, a response sent from the cache will have a `X-Cache: HIT` header and an `Age` header specifying the number of seconds elapsed since the request was committed to cache.
+What's more, a response sent from the cache will have a `X-Cache: HIT` header and an `Age` header specifying the number of seconds elapsed since the request was committed to cache.
 
 A response sent directly from the upstream server will have a `X-Cache: MISS` header.
