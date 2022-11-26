@@ -1,22 +1,25 @@
 package cache
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
-var index = set{map_: &sync.Map{}}
+var index = syncMap[string, time.Duration]{map_: &sync.Map{}}
 
-type set struct {
+type syncMap[keyType comparable, valueType any] struct {
 	map_ *sync.Map
 }
 
-func (s *set) contains(e any) bool {
-	_, ok := s.map_.Load(e)
+func (s *syncMap[keyType, _]) contains(k keyType) bool {
+	_, ok := s.map_.Load(k)
 	return ok
 }
 
-func (s *set) add(e any) {
-	s.map_.Store(e, struct{}{})
+func (s *syncMap[keyType, valueType]) store(k keyType, v valueType) {
+	s.map_.Store(k, v)
 }
 
-func (s *set) remove(e any) {
-	s.map_.Delete(e)
+func (s *syncMap[keyType, _]) remove(k keyType) {
+	s.map_.Delete(k)
 }

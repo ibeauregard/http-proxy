@@ -27,7 +27,7 @@ func (r *CacheableResponse) Store(cacheKey string) {
 		cacheFile.delete()
 		return
 	}
-	index.add(cacheFile.key)
+	index.store(cacheFile.key, cacheLifespan)
 	cacheFile.scheduleDeletion(cacheLifespan)
 }
 
