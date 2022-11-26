@@ -52,7 +52,6 @@ func (f *cacheFile) delete() {
 }
 
 func (f *cacheFile) scheduleDeletion(lifespan time.Duration) {
-	index.add(f.key)
 	time.AfterFunc(lifespan, func() {
 		index.remove(f.key)
 		f.delete()
