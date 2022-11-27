@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"github.com/ztrue/shutdown"
 	"log"
+	"my_proxy/internal/cache"
 	"net/http"
 	"syscall"
 )
 
 func main() {
 	shutdown.Add(func() {
-		fmt.Println("Shutdown!")
+		cache.Persist()
 	})
 	go func() {
+		cache.Load()
 		fmt.Println("Proxy listening on http://localhost:8080")
 		log.Panic(http.ListenAndServe(":8080", http.HandlerFunc(myProxy)))
 	}()

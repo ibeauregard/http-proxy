@@ -1,25 +1,80 @@
 package cache
 
 import (
+	"encoding/gob"
+	"my_proxy/internal/errors_"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
 
-var index = syncMap[string, time.Duration]{map_: &sync.Map{}}
+var index = cacheIndex[string, time.Time]{map_: &sync.Map{}}
 
-type syncMap[keyType comparable, valueType any] struct {
+type cacheIndex[keyType ~string, valueType time.Time] struct {
 	map_ *sync.Map
 }
 
-func (s *syncMap[keyType, _]) contains(k keyType) bool {
-	_, ok := s.map_.Load(k)
+func (ci *cacheIndex[keyType, _]) contains(k keyType) bool {
+	_, ok := ci.map_.Load(k)
 	return ok
 }
 
-func (s *syncMap[keyType, valueType]) store(k keyType, v valueType) {
-	s.map_.Store(k, v)
+func (ci *cacheIndex[keyType, valueType]) store(k keyType, v valueType) {
+	ci.map_.Store(k, v)
 }
 
-func (s *syncMap[keyType, _]) remove(k keyType) {
-	s.map_.Delete(k)
+func (ci *cacheIndex[keyType, _]) remove(k keyType) {
+	ci.map_.Delete(k)
+}
+
+func (ci *cacheIndex[keyType, valueType]) getMap() map[keyType]valueType {
+	m := map[keyType]valueType{}
+	ci.map_.Range(func(key, value any) bool {
+		m[key.(keyType)] = value.(valueType)
+		return true
+	})
+	return m
+}
+
+var cacheIndexPath = filepath.Join(cacheDirName, "index.gob")
+
+func Persist() {
+	file, err := os.Create(cacheIndexPath)
+	if err != nil {
+		errors_.Log(Persist, err)
+		return
+	}
+	defer file.Close()
+	err = gob.NewEncoder(file).Encode(index.getMap())
+	if err != nil {
+		errors_.Log(Persist, err)
+	}
+}
+
+func Load() {
+	file, err := os.Open(cacheIndexPath)
+	if err != nil {
+		errors_.Log(Load, err)
+		return
+	}
+	defer file.Close()
+	m := map[string]time.Time{}
+	if err = gob.NewDecoder(file).Decode(&m); err != nil {
+		errors_.Log(Load, err)
+		return
+	}
+	updateCache(m)
+}
+
+func updateCache(m map[string]time.Time) {
+	for key, deletionTime := range m {
+		now := time.Now()
+		if deletionTime.Before(now) {
+			newCacheFile(key).delete()
+		} else {
+			index.store(key, deletionTime)
+			newCacheFile(key).scheduleDeletion(deletionTime.Sub(now))
+		}
+	}
 }

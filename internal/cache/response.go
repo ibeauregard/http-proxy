@@ -5,6 +5,7 @@ import (
 	"io"
 	"my_proxy/internal/errors_"
 	"my_proxy/internal/http_"
+	"time"
 )
 
 type CacheableResponse struct {
@@ -27,7 +28,7 @@ func (r *CacheableResponse) Store(cacheKey string) {
 		cacheFile.delete()
 		return
 	}
-	index.store(cacheFile.key, cacheLifespan)
+	index.store(cacheFile.key, time.Now().Add(cacheLifespan))
 	cacheFile.scheduleDeletion(cacheLifespan)
 }
 
