@@ -9,29 +9,29 @@ import (
 	"time"
 )
 
-var index = cacheIndex{map_: &sync.Map{}}
+var index = syncMap[string, time.Time]{map_: &sync.Map{}}
 
-type cacheIndex struct {
+type syncMap[K comparable, V any] struct {
 	map_ *sync.Map
 }
 
-func (ci *cacheIndex) contains(k string) bool {
+func (ci *syncMap[K, _]) contains(k K) bool {
 	_, ok := ci.map_.Load(k)
 	return ok
 }
 
-func (ci *cacheIndex) store(k string, v time.Time) {
+func (ci *syncMap[K, V]) store(k K, v V) {
 	ci.map_.Store(k, v)
 }
 
-func (ci *cacheIndex) remove(k string) {
+func (ci *syncMap[K, _]) remove(k K) {
 	ci.map_.Delete(k)
 }
 
-func (ci *cacheIndex) getMap() map[string]time.Time {
-	m := map[string]time.Time{}
+func (ci *syncMap[K, V]) getMap() map[K]V {
+	m := map[K]V{}
 	ci.map_.Range(func(key, value any) bool {
-		m[key.(string)] = value.(time.Time)
+		m[key.(K)] = value.(V)
 		return true
 	})
 	return m
