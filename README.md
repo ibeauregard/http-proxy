@@ -65,7 +65,24 @@ When an upstream response is deemed cacheable (see [section How does the proxy d
 
 When an entry is committed to cache, its lifespan is already known, because it can be determined either from the Cache-Control header or from the Expires headers. So we can already schedule the deletion of the cache entry with the help of Go's [time.AfterFunc](https://pkg.go.dev/time#AfterFunc), which waits for the specified time to elapse and then calls the specified function in its own goroutine. Note that because the goroutine is only created when the deferred function needs to be executed, this method does not waste resources.
 
-A global cache index is also used, which is just the set of keys of all cache entries currently stored. After a cache entry was created and written to, its key gets added to the index. And the key gets removed from the index before the entry is deleted. Without such an index, the only way to determine whether a client request was already cached is to make a system call to determine if the associated file is existent. This is a waste of resources that can easily be avoided. 
+### Cache index 
+
+A global cache index is also used, which is a map associating cache keys with their respective deletion times. After a cache entry was created and written to, the key and deletion time pair gets added to the index, and the key gets removed before the entry is deleted. Without such an index, the only way to determine whether a client request was already cached is to make a system call to determine if the associated file is existent. This is a waste of resources which can easily be avoided. 
+
+### Persistence
+
+This HTTP Proxy is able to persist its cache even if it goes down for some time. The persistence is accomplished through [Docker volumes](https://docs.docker.com/storage/volumes/).
+
+The coexistence of persistence and a [cache index](#cache-index) has to be dealt with. That is, the cache index, which is in-memory, also has to be correctly persisted.
+
+When the application receives a shutdown signal, it will encode the cache index to file before it terminates.
+
+Here is what happens when the application is relaunched:
+
+- The index cache is decoded from the saved file into a temporary map
+- For each `key:deletion time` pair in the temporary map
+  - if the deletion time is in the past, delete the associated cache file and do not add the pair to the index
+  - otherwise, add the pair to the index, and reschedule the deletion of the cache file (each cache file is scheduled for deletion; see [How is the cache actually implemented?](#how-is-the-cache-actually-implemented) above).
 
 ### Prioritize serving over caching
 
