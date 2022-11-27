@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"my_proxy/internal/errors_"
@@ -9,7 +8,13 @@ import (
 )
 
 type cacheEntryWriter struct {
-	*bufio.Writer
+	i
+}
+
+type i interface {
+	WriteString(string) (int, error)
+	Write(p []byte) (n int, err error)
+	Flush() error
 }
 
 var crlf = "\r\n"
@@ -40,8 +45,10 @@ func (w *cacheEntryWriter) writeHeaders(headers http.Header) error {
 	return nil
 }
 
-func (w *cacheEntryWriter) writeBody(body io.Reader) error {
-	if _, err := io.Copy(w, body); err != nil {
+type copyFunc func(io.Writer, io.Reader) (int64, error)
+
+func (w *cacheEntryWriter) writeBody(body io.Reader, copy copyFunc) error {
+	if _, err := copy(w, body); err != nil {
 		return errors_.Format(w.writeBody, err)
 	}
 	return nil
