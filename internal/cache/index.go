@@ -9,29 +9,29 @@ import (
 	"time"
 )
 
-var index = cacheIndex[string, time.Time]{map_: &sync.Map{}}
+var index = cacheIndex{map_: &sync.Map{}}
 
-type cacheIndex[keyType ~string, valueType time.Time] struct {
+type cacheIndex struct {
 	map_ *sync.Map
 }
 
-func (ci *cacheIndex[keyType, _]) contains(k keyType) bool {
+func (ci *cacheIndex) contains(k string) bool {
 	_, ok := ci.map_.Load(k)
 	return ok
 }
 
-func (ci *cacheIndex[keyType, valueType]) store(k keyType, v valueType) {
+func (ci *cacheIndex) store(k string, v time.Time) {
 	ci.map_.Store(k, v)
 }
 
-func (ci *cacheIndex[keyType, _]) remove(k keyType) {
+func (ci *cacheIndex) remove(k string) {
 	ci.map_.Delete(k)
 }
 
-func (ci *cacheIndex[keyType, valueType]) getMap() map[keyType]valueType {
-	m := map[keyType]valueType{}
+func (ci *cacheIndex) getMap() map[string]time.Time {
+	m := map[string]time.Time{}
 	ci.map_.Range(func(key, value any) bool {
-		m[key.(keyType)] = value.(valueType)
+		m[key.(string)] = value.(time.Time)
 		return true
 	})
 	return m
