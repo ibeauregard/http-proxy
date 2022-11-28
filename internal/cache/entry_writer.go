@@ -17,7 +17,7 @@ type i interface {
 	Flush() error
 }
 
-var crlf = "\r\n"
+const crlf = "\r\n"
 
 func (w *cacheEntryWriter) writeStatusLine(proto string, statusCode int) error {
 	if _, err := w.WriteString(
