@@ -21,7 +21,7 @@ const crlf = "\r\n"
 
 func (w *cacheEntryWriter) writeStatusLine(proto string, statusCode int) error {
 	if _, err := w.WriteString(
-		fmt.Sprintf("%s %d %s %s", proto, statusCode, http.StatusText(statusCode), crlf)); err != nil {
+		fmt.Sprintf("%s %d %s%s", proto, statusCode, http.StatusText(statusCode), crlf)); err != nil {
 		return errors_.Format(w.writeStatusLine, err)
 	}
 	return nil
