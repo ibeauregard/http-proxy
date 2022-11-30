@@ -15,22 +15,22 @@ type syncMap[K comparable, V any] struct {
 	map_ *sync.Map
 }
 
-func (ci *syncMap[K, _]) contains(k K) bool {
-	_, ok := ci.map_.Load(k)
+func (sm *syncMap[K, _]) contains(k K) bool {
+	_, ok := sm.map_.Load(k)
 	return ok
 }
 
-func (ci *syncMap[K, V]) store(k K, v V) {
-	ci.map_.Store(k, v)
+func (sm *syncMap[K, V]) store(k K, v V) {
+	sm.map_.Store(k, v)
 }
 
-func (ci *syncMap[K, _]) remove(k K) {
-	ci.map_.Delete(k)
+func (sm *syncMap[K, _]) remove(k K) {
+	sm.map_.Delete(k)
 }
 
-func (ci *syncMap[K, V]) getMap() map[K]V {
+func (sm *syncMap[K, V]) getMap() map[K]V {
 	m := map[K]V{}
-	ci.map_.Range(func(key, value any) bool {
+	sm.map_.Range(func(key, value any) bool {
 		m[key.(K)] = value.(V)
 		return true
 	})
