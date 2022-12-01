@@ -22,8 +22,6 @@ func (f *cacheFile) path() string {
 	return filepath.Join(cacheDirName, f.key)
 }
 
-var sysOpenFile = os.OpenFile
-
 func (f *cacheFile) create() *file {
 	// If O_CREAT and O_EXCL are set, open() shall fail if the file exists
 	// If we don't set O_EXCL, a succession of requests very close in time
@@ -35,8 +33,6 @@ func (f *cacheFile) create() *file {
 	}
 	return &file{osFile}
 }
-
-var sysOpen = os.Open
 
 func (f *cacheFile) open() *file {
 	if !index.contains(f.key) {
@@ -50,15 +46,11 @@ func (f *cacheFile) open() *file {
 	return &file{osFile}
 }
 
-var sysRemove = os.Remove
-
 func (f *cacheFile) delete() {
 	if err := sysRemove(f.path()); err != nil {
 		errors_.Log(f.delete, err)
 	}
 }
-
-var afterFunc = time.AfterFunc
 
 func (f *cacheFile) scheduleDeletion(lifespan time.Duration) {
 	afterFunc(lifespan, func() {

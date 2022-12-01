@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"log"
 	"os"
 	"testing"
@@ -89,7 +90,8 @@ func TestOpenKeyNotInIndex(t *testing.T) {
 func TestOpenOsOpenFails(t *testing.T) {
 	key := "key"
 	index.store(key, time.Time{})
-	sysOpen = func(name string) (*os.File, error) {
+	defer clearIndex(t, key)
+	sysOpen = func(name string) (io.ReadWriteCloser, error) {
 		return nil, errors.New("error")
 	}
 	var output *file
@@ -102,7 +104,8 @@ func TestOpenOsOpenFails(t *testing.T) {
 func TestOpenSuccess(t *testing.T) {
 	key, osFile := "key", &os.File{}
 	index.store(key, time.Time{})
-	sysOpen = func(name string) (*os.File, error) {
+	defer clearIndex(t, key)
+	sysOpen = func(name string) (io.ReadWriteCloser, error) {
 		return osFile, nil
 	}
 	var output *file

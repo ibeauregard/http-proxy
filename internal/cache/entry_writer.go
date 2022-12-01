@@ -42,8 +42,6 @@ func (w *cacheEntryWriter) writeHeaders(headers http.Header) error {
 	return nil
 }
 
-var ioCopy = io.Copy
-
 func (w *cacheEntryWriter) writeBody(body io.Reader) error {
 	if _, err := ioCopy(w, body); err != nil {
 		return errors_.Format(w.writeBody, err)
