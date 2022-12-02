@@ -54,8 +54,11 @@ func Persist() {
 		errors_.Log(Persist, err)
 		return
 	}
-	// TODO: log this error
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			errors_.Log(Persist, err)
+		}
+	}()
 	err = newEncoder(file).Encode(index.getMap())
 	if err != nil {
 		errors_.Log(Persist, err)
@@ -68,8 +71,11 @@ func Load() {
 		errors_.Log(Load, err)
 		return
 	}
-	// TODO: log this error
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			errors_.Log(Load, err)
+		}
+	}()
 	m := map[string]time.Time{}
 	if err = newDecoder(file).Decode(&m); err != nil {
 		errors_.Log(Load, err)
@@ -78,12 +84,12 @@ func Load() {
 	updateCache(m)
 }
 
-type cacheFileDeleter interface {
+type updateCacheCacheFileInterface interface {
 	delete()
 	scheduleDeletion(time.Duration)
 }
 
-var cacheFileFactory = func(cacheKey string) cacheFileDeleter {
+var updateCacheCacheFileFactory = func(cacheKey string) updateCacheCacheFileInterface {
 	return newCacheFile(cacheKey)
 }
 
@@ -91,10 +97,10 @@ var updateCache = func(m map[string]time.Time) {
 	for key, deletionTime := range m {
 		now := timeDotNow()
 		if deletionTime.Before(now) {
-			cacheFileFactory(key).delete()
+			updateCacheCacheFileFactory(key).delete()
 		} else {
 			index.store(key, deletionTime)
-			cacheFileFactory(key).scheduleDeletion(deletionTime.Sub(now))
+			updateCacheCacheFileFactory(key).scheduleDeletion(deletionTime.Sub(now))
 		}
 	}
 }
