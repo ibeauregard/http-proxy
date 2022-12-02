@@ -41,6 +41,7 @@ func TestPath(t *testing.T) {
 		testName := fmt.Sprintf("cacheFile.path(), dirName=%q, key=%q", test.dirName, test.key)
 		t.Run(testName, func(t *testing.T) {
 			cacheDirName = test.dirName
+			defer func() { cacheDirName = cacheDirNameBackup }()
 			assert.EqualValues(t, test.expected, (&cacheFile{test.key}).path())
 		})
 	}
@@ -49,9 +50,7 @@ func TestPath(t *testing.T) {
 func captureLog(f func()) string {
 	buf := bytes.Buffer{}
 	log.SetOutput(&buf)
-	defer func() {
-		log.SetOutput(os.Stderr)
-	}()
+	defer func() { log.SetOutput(os.Stderr) }()
 	f()
 	return buf.String()
 }
@@ -90,7 +89,6 @@ func TestOpenKeyNotInIndex(t *testing.T) {
 func TestOpenOsOpenFails(t *testing.T) {
 	key := "key"
 	index.store(key, time.Time{})
-	defer clearIndex(t, key)
 	sysOpen = func(name string) (io.ReadWriteCloser, error) {
 		return nil, errors.New("error")
 	}
@@ -104,7 +102,6 @@ func TestOpenOsOpenFails(t *testing.T) {
 func TestOpenSuccess(t *testing.T) {
 	key, osFile := "key", &os.File{}
 	index.store(key, time.Time{})
-	defer clearIndex(t, key)
 	sysOpen = func(name string) (io.ReadWriteCloser, error) {
 		return osFile, nil
 	}
@@ -138,9 +135,9 @@ func TestScheduleDeletion(t *testing.T) {
 		return nil
 	}
 	scheduledFunctions := map[time.Time][]func(){}
-	now, lifespan := time.Now(), 10*time.Second
+	lifespan := 10 * time.Second
 	afterFunc = func(d time.Duration, f func()) *time.Timer {
-		deletionTime := now.Add(d)
+		deletionTime := nowMock.Add(d)
 		if funcSlice, ok := scheduledFunctions[deletionTime]; ok {
 			scheduledFunctions[deletionTime] = append(funcSlice, f)
 		} else {
@@ -150,7 +147,7 @@ func TestScheduleDeletion(t *testing.T) {
 		return nil
 	}
 	(&cacheFile{}).scheduleDeletion(lifespan)
-	assert.Equal(t, 1, len(scheduledFunctions[now.Add(lifespan)]))
+	assert.Equal(t, 1, len(scheduledFunctions[nowMock.Add(lifespan)]))
 }
 
 type osFileMock struct {

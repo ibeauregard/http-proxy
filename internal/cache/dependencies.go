@@ -25,3 +25,8 @@ var newEncoder = func(writer io.Writer) interface{ Encode(any) error } {
 var newDecoder = func(reader io.Reader) interface{ Decode(any) error } {
 	return gob.NewDecoder(reader)
 }
+
+var timeFunc = time.Now
+var timeDotNow = func() time.Time {
+	return timeFunc()
+}

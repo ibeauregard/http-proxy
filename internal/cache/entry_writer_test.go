@@ -159,5 +159,6 @@ func TestWriteBodyError(t *testing.T) {
 	ioCopy = func(_ io.Writer, _ io.Reader) (int64, error) {
 		return 0, errors.New("error")
 	}
+	defer func() { ioCopy = ioCopyBackup }()
 	assert.Error(t, (&cacheEntryWriter{}).writeBody(nil))
 }

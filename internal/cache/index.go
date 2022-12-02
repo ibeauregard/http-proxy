@@ -7,10 +7,14 @@ import (
 	"time"
 )
 
-var index = mapp[string, time.Time]{&sync.Map{}}
+var index = newIndex()
 
 type mapp[K comparable, V any] struct {
 	m mapInterface
+}
+
+func newIndex() *mapp[string, time.Time] {
+	return &mapp[string, time.Time]{&sync.Map{}}
 }
 
 type mapInterface interface {
@@ -74,15 +78,23 @@ func Load() {
 	updateCache(m)
 }
 
-// TODO: Once this is tested, we probably won't need to make it a package-global var
+type cacheFileDeleter interface {
+	delete()
+	scheduleDeletion(time.Duration)
+}
+
+var cacheFileFactory = func(cacheKey string) cacheFileDeleter {
+	return newCacheFile(cacheKey)
+}
+
 var updateCache = func(m map[string]time.Time) {
 	for key, deletionTime := range m {
-		now := time.Now()
+		now := timeDotNow()
 		if deletionTime.Before(now) {
-			newCacheFile(key).delete()
+			cacheFileFactory(key).delete()
 		} else {
 			index.store(key, deletionTime)
-			newCacheFile(key).scheduleDeletion(deletionTime.Sub(now))
+			cacheFileFactory(key).scheduleDeletion(deletionTime.Sub(now))
 		}
 	}
 }

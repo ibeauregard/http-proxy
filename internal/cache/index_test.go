@@ -64,8 +64,8 @@ func TestPersistSuccess(t *testing.T) {
 	sysCreate = func(_ string) (io.WriteCloser, error) {
 		return mockFile, nil
 	}
-	index.store("0", time.Date(2022, time.November, 30, 23, 21, 43, 0, time.UTC))
-	defer clearIndex(t, "0")
+	index.store("0", nowMock)
+	defer func() { index = newIndex() }()
 	assert.Empty(t, captureLog(func() { Persist() }))
 	m := map[string]time.Time{}
 	gob.NewDecoder(mockFile).Decode(&m)
@@ -109,8 +109,12 @@ func TestLoadSuccess(t *testing.T) {
 			}
 		}
 	}
-	pastDate := time.Date(1776, time.July, 4, 12, 0, 0, 0, time.UTC)
-	futureDate := time.Date(6771, time.July, 4, 12, 0, 0, 0, time.UTC)
+	defer func() {
+		updateCache = updateCacheBackup
+		index = newIndex()
+	}()
+	pastDate := time.Date(1776, 7, 4, 12, 0, 0, 0, time.UTC)
+	futureDate := time.Date(6771, 7, 4, 12, 0, 0, 0, time.UTC)
 	m := map[string]time.Time{
 		"past":   pastDate,
 		"future": futureDate,
@@ -121,7 +125,6 @@ func TestLoadSuccess(t *testing.T) {
 		return mockFile, nil
 	}
 	assert.Empty(t, captureLog(func() { Load() }))
-	defer clearIndex(t, "future")
 	assert.EqualValues(t, map[string]time.Time{"future": futureDate}, index.getMap())
 }
 
@@ -141,4 +144,93 @@ func TestLoadDecodingError(t *testing.T) {
 		return &encodeDecodeErrorMock{}
 	}
 	assert.NotEmpty(t, captureLog(func() { Load() }))
+}
+
+func TestCacheFileFactory(t *testing.T) {
+	key := "my_key"
+	assert.EqualValues(t, &cacheFile{key}, cacheFileFactory(key))
+}
+
+type cacheFileDeleterMock struct {
+	key       string
+	cache     map[string]struct{}
+	callbacks map[time.Time]map[string]struct{}
+}
+
+func (mock *cacheFileDeleterMock) delete() {
+	delete(mock.cache, mock.key)
+}
+
+func (mock *cacheFileDeleterMock) scheduleDeletion(lifetime time.Duration) {
+	deletionTime := nowMock.Add(lifetime)
+	if callbacks, ok := mock.callbacks[deletionTime]; ok {
+		callbacks[mock.key] = struct{}{}
+	} else {
+		mock.callbacks[deletionTime] = map[string]struct{}{mock.key: {}}
+	}
+}
+
+func TestUpdateCache(t *testing.T) {
+	timeDotNow = func() time.Time {
+		return nowMock
+	}
+	for _, cache := range []map[string]time.Time{
+		{},
+		{
+			"f1": time.Date(1943, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f2": time.Date(1943, 4, 19, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			"f1": time.Date(2306, 2, 4, 0, 0, 0, 0, time.UTC),
+			"f2": time.Date(2306, 2, 4, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			"f1": time.Date(1943, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f2": time.Date(2001, 7, 27, 0, 0, 0, 0, time.UTC),
+			"f3": time.Date(2306, 2, 4, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			"f0": time.Date(2043, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f1": time.Date(1983, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f2": time.Date(2011, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f3": time.Date(1776, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f4": time.Date(2189, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f5": time.Date(2293, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f6": time.Date(1918, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f7": time.Date(1935, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f8": time.Date(2154, 4, 19, 0, 0, 0, 0, time.UTC),
+			"f9": time.Date(1943, 4, 19, 0, 0, 0, 0, time.UTC),
+		},
+	} {
+		testName := fmt.Sprintf("updateDate, cache=%v", cache)
+		mockCache, mockCallbacks := map[string]struct{}{}, map[time.Time]map[string]struct{}{}
+		expectedCache, expectedCallbacks := map[string]struct{}{}, map[time.Time]map[string]struct{}{}
+		expectedIndex := map[string]time.Time{}
+		for key, deletionTime := range cache {
+			mockCache[key] = struct{}{}
+			if deletionTime.After(nowMock) {
+				expectedCache[key] = struct{}{}
+				if callbacks, ok := expectedCallbacks[deletionTime]; ok {
+					callbacks[key] = struct{}{}
+				} else {
+					expectedCallbacks[deletionTime] = map[string]struct{}{key: {}}
+				}
+				expectedIndex[key] = deletionTime
+			}
+		}
+		cacheFileFactory = func(cacheKey string) cacheFileDeleter {
+			return &cacheFileDeleterMock{
+				key:       cacheKey,
+				cache:     mockCache,
+				callbacks: mockCallbacks,
+			}
+		}
+		t.Run(testName, func(t *testing.T) {
+			updateCache(cache)
+			defer func() { index = newIndex() }()
+			assert.EqualValues(t, expectedCache, mockCache)
+			assert.EqualValues(t, expectedCallbacks, mockCallbacks)
+			assert.EqualValues(t, expectedIndex, index.getMap())
+		})
+	}
 }

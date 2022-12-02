@@ -1,13 +1,12 @@
 package cache
 
 import (
-	"github.com/stretchr/testify/assert"
-	"testing"
+	"time"
 )
 
-func clearIndex(t *testing.T, keys ...string) {
-	for _, key := range keys {
-		index.remove(key)
-	}
-	assert.True(t, len(index.getMap()) == 0)
-}
+var nowMock = time.Date(2022, 11, 30, 23, 21, 43, 0, time.UTC)
+var (
+	updateCacheBackup  = updateCache
+	ioCopyBackup       = ioCopy
+	cacheDirNameBackup = cacheDirName
+)
