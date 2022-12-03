@@ -34,7 +34,7 @@ func (b *cacheResponseBuilder) setStatusCode() *cacheResponseBuilder {
 	return b.withError(err)
 }
 
-var headerMatchingRegexp = regexp.MustCompile(`([-\w]+)\s*:\s*(.*\S)`)
+var headerMatchingRegexp = regexp.MustCompile(`^\s*([-\w]+)\s*:\s*(.*\S)`)
 
 func (b *cacheResponseBuilder) setHeaders() *cacheResponseBuilder {
 	if b.err != nil {
