@@ -1,12 +1,10 @@
 package cache
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io"
-	"log"
 	"os"
 	"testing"
 	"time"
@@ -45,14 +43,6 @@ func TestPath(t *testing.T) {
 			assert.EqualValues(t, test.expected, (&cacheFile{test.key}).path())
 		})
 	}
-}
-
-func captureLog(f func()) string {
-	buf := bytes.Buffer{}
-	log.SetOutput(&buf)
-	defer func() { log.SetOutput(os.Stderr) }()
-	f()
-	return buf.String()
 }
 
 func TestCreateNoError(t *testing.T) {

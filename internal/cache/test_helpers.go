@@ -1,6 +1,9 @@
 package cache
 
 import (
+	"bytes"
+	"log"
+	"os"
 	"time"
 )
 
@@ -10,3 +13,11 @@ var (
 	ioCopyBackup       = ioCopy
 	cacheDirNameBackup = cacheDirName
 )
+
+func captureLog(f func()) string {
+	buf := bytes.Buffer{}
+	log.SetOutput(&buf)
+	defer func() { log.SetOutput(os.Stderr) }()
+	f()
+	return buf.String()
+}
