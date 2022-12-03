@@ -53,20 +53,32 @@ func TestGetMap(t *testing.T) {
 
 type persistFileMock struct {
 	*bytes.Buffer
+	fileCloseError error
 }
 
 func (m *persistFileMock) Close() error {
-	return nil
+	return m.fileCloseError
 }
 
 func TestPersistSuccess(t *testing.T) {
-	mockFile := &persistFileMock{&bytes.Buffer{}}
+	mockFile := &persistFileMock{Buffer: &bytes.Buffer{}}
 	sysCreate = func(_ string) (io.WriteCloser, error) {
 		return mockFile, nil
 	}
 	index.store("0", nowMock)
 	defer func() { index = newIndex() }()
 	assert.Empty(t, captureLog(func() { Persist() }))
+	m := map[string]time.Time{}
+	gob.NewDecoder(mockFile).Decode(&m)
+	assert.EqualValues(t, index.getMap(), m)
+}
+
+func TestPersistSuccessButFileCloseError(t *testing.T) {
+	mockFile := &persistFileMock{&bytes.Buffer{}, errors.New("error")}
+	sysCreate = func(_ string) (io.WriteCloser, error) {
+		return mockFile, nil
+	}
+	assert.NotEmpty(t, captureLog(func() { Persist() }))
 	m := map[string]time.Time{}
 	gob.NewDecoder(mockFile).Decode(&m)
 	assert.EqualValues(t, index.getMap(), m)
@@ -119,13 +131,24 @@ func TestLoadSuccess(t *testing.T) {
 		"past":   pastDate,
 		"future": futureDate,
 	}
-	mockFile := &persistFileMock{&bytes.Buffer{}}
+	mockFile := &persistFileMock{Buffer: &bytes.Buffer{}}
 	gob.NewEncoder(mockFile).Encode(&m)
 	sysOpen = func(_ string) (io.ReadWriteCloser, error) {
 		return mockFile, nil
 	}
 	assert.Empty(t, captureLog(func() { Load() }))
 	assert.EqualValues(t, map[string]time.Time{"future": futureDate}, index.getMap())
+}
+
+func TestLoadSuccessButFileCloseError(t *testing.T) {
+	m := map[string]time.Time{}
+	mockFile := &persistFileMock{&bytes.Buffer{}, errors.New("error")}
+	gob.NewEncoder(mockFile).Encode(&m)
+	sysOpen = func(_ string) (io.ReadWriteCloser, error) {
+		return mockFile, nil
+	}
+	assert.NotEmpty(t, captureLog(func() { Load() }))
+	assert.EqualValues(t, m, index.getMap())
 }
 
 func TestLoadFileCreationError(t *testing.T) {
