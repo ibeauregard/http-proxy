@@ -80,7 +80,7 @@ func (b *cacheResponseBuilder) setCachedHeaders() error {
 }
 
 func (b *cacheResponseBuilder) setAgeHeader() error {
-	if err := addAgeHeader(b.response.Header); err != nil {
+	if err := overwriteAgeHeader(b.response.Header); err != nil {
 		errors_.Log(b.setHeaders, err)
 		return err
 	}
@@ -129,16 +129,16 @@ func setHeader(headers http.Header, line string) error {
 	return nil
 }
 
-func addAgeHeader(headers http.Header) error {
+func overwriteAgeHeader(headers http.Header) error {
 	dates, ok := headers[http.CanonicalHeaderKey("Date")]
 	if !ok {
-		return errors_.Format(addAgeHeader, errors_.New("Date header missing from cache entry"))
+		return errors_.Format(overwriteAgeHeader, errors_.New("Date header missing from cache entry"))
 	}
 	if len(dates) > 1 {
-		return errors_.Format(addAgeHeader, errors_.New("multiple Date headers in cache entry"))
+		return errors_.Format(overwriteAgeHeader, errors_.New("multiple Date headers in cache entry"))
 	}
 	canonicalAgeKey := http.CanonicalHeaderKey("Age")
-	headers[canonicalAgeKey] = append(headers[canonicalAgeKey], getEntryAge(dates[0]))
+	headers[canonicalAgeKey] = []string{getEntryAge(dates[0])}
 	return nil
 }
 
