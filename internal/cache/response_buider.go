@@ -54,11 +54,11 @@ func (b *cacheResponseBuilder) setBody() *cacheResponseBuilder {
 	return b
 }
 
-func (b *cacheResponseBuilder) build() *http_.Response {
+func (b *cacheResponseBuilder) build() (*http_.Response, error) {
 	if b.err != nil {
-		return nil
+		return nil, b.err
 	}
-	return b.response
+	return b.response, nil
 }
 
 func (b *cacheResponseBuilder) setCachedHeaders() error {

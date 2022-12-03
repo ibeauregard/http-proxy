@@ -38,11 +38,16 @@ func Retrieve(cacheKey string) *http_.Response {
 	if openCacheFile == nil {
 		return nil
 	}
-	return newCacheResponseBuilder(openCacheFile).
+	response, err := newCacheResponseBuilder(openCacheFile).
 		setStatusCode().
 		setHeaders().
 		setBody().
 		build()
+	if err != nil {
+		index.remove(cacheKey)
+		cacheFile.delete()
+	}
+	return response
 }
 
 func (r *CacheableResponse) writeToCache(f io.Writer) error {
