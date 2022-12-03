@@ -128,11 +128,7 @@ func TestScheduleDeletion(t *testing.T) {
 	lifespan := 10 * time.Second
 	afterFunc = func(d time.Duration, f func()) *time.Timer {
 		deletionTime := nowMock.Add(d)
-		if funcSlice, ok := scheduledFunctions[deletionTime]; ok {
-			scheduledFunctions[deletionTime] = append(funcSlice, f)
-		} else {
-			scheduledFunctions[deletionTime] = []func(){f}
-		}
+		scheduledFunctions[deletionTime] = append(scheduledFunctions[deletionTime], f)
 		f()
 		return nil
 	}
