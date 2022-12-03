@@ -66,12 +66,16 @@ func (evaluator *cacheLifespanEvaluator) getLifespanFromExpiresHeader() time.Dur
 	return 0
 }
 
+var timeUntil = time.Until
+
 func getDurationUntilTimestamp(timestamp string) time.Duration {
-	return getDurationRelativeToTimestamp(timestamp, time.Until)
+	return getDurationRelativeToTimestamp(timestamp, timeUntil)
 }
 
+var timeSince = time.Since
+
 func getDurationSinceTimestamp(timestamp string) time.Duration {
-	return getDurationRelativeToTimestamp(timestamp, time.Since)
+	return getDurationRelativeToTimestamp(timestamp, timeSince)
 }
 
 var httpTimestampFormats = []string{time.RFC1123, time.RFC850, time.ANSIC}
