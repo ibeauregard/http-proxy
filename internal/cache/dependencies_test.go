@@ -15,7 +15,7 @@ func TestSysCreateSuccess(t *testing.T) {
 	}
 	file, err := sysCreate("foobar")
 	assert.Nil(t, err)
-	assert.Equal(t, osFile, file)
+	assert.Same(t, osFile, file)
 }
 
 func TestSysCreateError(t *testing.T) {
@@ -34,7 +34,7 @@ func TestSysOpenSuccess(t *testing.T) {
 	}
 	file, err := sysOpen("foobar")
 	assert.Nil(t, err)
-	assert.Equal(t, osFile, file)
+	assert.Same(t, osFile, file)
 }
 
 func TestSysOpenError(t *testing.T) {
