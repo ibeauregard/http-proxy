@@ -8,10 +8,10 @@ import (
 )
 
 type cacheEntryWriter struct {
-	cacheEntryWriterInterface
+	bufferedWriterInterface
 }
 
-type cacheEntryWriterInterface interface {
+type bufferedWriterInterface interface {
 	WriteString(string) (int, error)
 	Write(p []byte) (n int, err error)
 	Flush() error

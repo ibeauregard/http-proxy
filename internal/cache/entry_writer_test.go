@@ -14,7 +14,7 @@ import (
 )
 
 type writeStatusLineMock struct {
-	cacheEntryWriterInterface
+	bufferedWriterInterface
 	writtenLine string
 	outputError error
 }
@@ -64,7 +64,7 @@ func TestWriteStatusLineError(t *testing.T) {
 }
 
 type writeHeadersMock struct {
-	cacheEntryWriterInterface
+	bufferedWriterInterface
 	builder             strings.Builder
 	numWriteStringCalls int
 	failsAfter          int
