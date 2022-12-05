@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io"
+	"my_proxy/internal/tests"
 	"sync"
 	"testing"
 	"time"
@@ -67,7 +68,7 @@ func TestPersistSuccess(t *testing.T) {
 	}
 	index.store("0", nowMock)
 	defer func() { index = newIndex() }()
-	assert.Empty(t, captureLog(func() { Persist() }))
+	assert.Empty(t, tests.CaptureLog(func() { Persist() }))
 	m := map[string]time.Time{}
 	gob.NewDecoder(mockFile).Decode(&m)
 	assert.EqualValues(t, index.getMap(), m)
@@ -78,7 +79,7 @@ func TestPersistSuccessButFileCloseError(t *testing.T) {
 	sysCreate = func(_ string) (io.WriteCloser, error) {
 		return mockFile, nil
 	}
-	assert.NotEmpty(t, captureLog(func() { Persist() }))
+	assert.NotEmpty(t, tests.CaptureLog(func() { Persist() }))
 	m := map[string]time.Time{}
 	gob.NewDecoder(mockFile).Decode(&m)
 	assert.EqualValues(t, index.getMap(), m)
@@ -88,7 +89,7 @@ func TestPersistFileCreationError(t *testing.T) {
 	sysCreate = func(_ string) (io.WriteCloser, error) {
 		return nil, errors.New("error")
 	}
-	assert.NotEmpty(t, captureLog(func() { Persist() }))
+	assert.NotEmpty(t, tests.CaptureLog(func() { Persist() }))
 }
 
 type encodeDecodeErrorMock struct {
@@ -110,7 +111,7 @@ func TestPersistEncodingError(t *testing.T) {
 	newEncoder = func(_ io.Writer) interface{ Encode(any) error } {
 		return &encodeDecodeErrorMock{}
 	}
-	assert.NotEmpty(t, captureLog(func() { Persist() }))
+	assert.NotEmpty(t, tests.CaptureLog(func() { Persist() }))
 }
 
 func TestLoadSuccess(t *testing.T) {
@@ -136,7 +137,7 @@ func TestLoadSuccess(t *testing.T) {
 	sysOpen = func(_ string) (io.ReadWriteCloser, error) {
 		return mockFile, nil
 	}
-	assert.Empty(t, captureLog(func() { Load() }))
+	assert.Empty(t, tests.CaptureLog(func() { Load() }))
 	assert.EqualValues(t, map[string]time.Time{"future": futureDate}, index.getMap())
 }
 
@@ -147,7 +148,7 @@ func TestLoadSuccessButFileCloseError(t *testing.T) {
 	sysOpen = func(_ string) (io.ReadWriteCloser, error) {
 		return mockFile, nil
 	}
-	assert.NotEmpty(t, captureLog(func() { Load() }))
+	assert.NotEmpty(t, tests.CaptureLog(func() { Load() }))
 	assert.EqualValues(t, m, index.getMap())
 }
 
@@ -155,7 +156,7 @@ func TestLoadFileCreationError(t *testing.T) {
 	sysOpen = func(_ string) (io.ReadWriteCloser, error) {
 		return nil, errors.New("error")
 	}
-	assert.NotEmpty(t, captureLog(func() { Load() }))
+	assert.NotEmpty(t, tests.CaptureLog(func() { Load() }))
 }
 
 func TestLoadDecodingError(t *testing.T) {
@@ -166,7 +167,7 @@ func TestLoadDecodingError(t *testing.T) {
 	newDecoder = func(_ io.Reader) interface{ Decode(any) error } {
 		return &encodeDecodeErrorMock{}
 	}
-	assert.NotEmpty(t, captureLog(func() { Load() }))
+	assert.NotEmpty(t, tests.CaptureLog(func() { Load() }))
 }
 
 func TestCacheFileFactory(t *testing.T) {

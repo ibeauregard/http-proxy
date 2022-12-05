@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io"
+	"my_proxy/internal/tests"
 	"os"
 	"testing"
 	"time"
@@ -45,7 +46,7 @@ func TestCreateNoError(t *testing.T) {
 		return osFile, nil
 	}
 	var output *file
-	assert.Empty(t, captureLog(func() {
+	assert.Empty(t, tests.CaptureLog(func() {
 		output = (&cacheFile{}).create()
 	}))
 	assert.EqualValues(t, &file{osFile}, output)
@@ -56,7 +57,7 @@ func TestCreateError(t *testing.T) {
 		return nil, errors.New("error")
 	}
 	var output *file
-	assert.NotEmpty(t, captureLog(func() {
+	assert.NotEmpty(t, tests.CaptureLog(func() {
 		output = (&cacheFile{}).create()
 	}))
 	assert.Nil(t, output)
@@ -64,7 +65,7 @@ func TestCreateError(t *testing.T) {
 
 func TestOpenKeyNotInIndex(t *testing.T) {
 	var output *file
-	assert.Empty(t, captureLog(func() {
+	assert.Empty(t, tests.CaptureLog(func() {
 		output = (&cacheFile{"non-indexed key"}).open()
 	}))
 	assert.Nil(t, output)
@@ -77,7 +78,7 @@ func TestOpenOsOpenFails(t *testing.T) {
 		return nil, errors.New("error")
 	}
 	var output *file
-	assert.NotEmpty(t, captureLog(func() {
+	assert.NotEmpty(t, tests.CaptureLog(func() {
 		output = (&cacheFile{key}).open()
 	}))
 	assert.Nil(t, output)
@@ -90,7 +91,7 @@ func TestOpenSuccess(t *testing.T) {
 		return osFile, nil
 	}
 	var output *file
-	assert.Empty(t, captureLog(func() {
+	assert.Empty(t, tests.CaptureLog(func() {
 		output = (&cacheFile{key}).open()
 	}))
 	assert.EqualValues(t, &file{osFile}, output)
@@ -100,7 +101,7 @@ func TestDeleteSysRemoveFails(t *testing.T) {
 	sysRemove = func(name string) error {
 		return errors.New("error")
 	}
-	assert.NotEmpty(t, captureLog(func() {
+	assert.NotEmpty(t, tests.CaptureLog(func() {
 		(&cacheFile{}).delete()
 	}))
 }
@@ -109,7 +110,7 @@ func TestDeleteSysRemoveSucceeds(t *testing.T) {
 	sysRemove = func(name string) error {
 		return nil
 	}
-	assert.Empty(t, captureLog(func() {
+	assert.Empty(t, tests.CaptureLog(func() {
 		(&cacheFile{}).delete()
 	}))
 }
@@ -140,13 +141,13 @@ func (m *osFileMock) Close() error {
 }
 
 func TestCloseSuccess(t *testing.T) {
-	assert.Empty(t, captureLog(func() {
+	assert.Empty(t, tests.CaptureLog(func() {
 		(&file{&osFileMock{err: nil}}).close()
 	}))
 }
 
 func TestCloseError(t *testing.T) {
-	assert.NotEmpty(t, captureLog(func() {
+	assert.NotEmpty(t, tests.CaptureLog(func() {
 		(&file{&osFileMock{err: errors.New("error")}}).close()
 	}))
 }

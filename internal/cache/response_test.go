@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io"
 	"my_proxy/internal/http_"
+	"my_proxy/internal/tests"
 	"net/http"
 	"strconv"
 	"strings"
@@ -86,7 +87,7 @@ func TestStoreSuccess(t *testing.T) {
 		body,
 	}, crlf)
 	expectedDeletionTime := nowMock.Add(time.Duration(maxAge) * time.Second)
-	assert.Empty(t, captureLog(func() { resp.Store(key) }))
+	assert.Empty(t, tests.CaptureLog(func() { resp.Store(key) }))
 	assert.Equal(t, expectedCacheFileContent, buffer.String())
 	assert.Equal(t, expectedDeletionTime, index.getMap()[key])
 	assert.True(t, cacheFileMock.scheduledForDeletion)
@@ -105,7 +106,7 @@ func TestStoreNonCacheableResponse(t *testing.T) {
 		assert.Fail(t, "newCacheFile() should not be called in this scenario; no cache file to create")
 		return nil
 	}
-	assert.Empty(t, captureLog(func() { resp.Store(key) }))
+	assert.Empty(t, tests.CaptureLog(func() { resp.Store(key) }))
 	assert.False(t, index.contains(key))
 }
 
@@ -122,7 +123,7 @@ func TestStoreCacheFileCreationError(t *testing.T) {
 	newCacheFile = func(_ string) cacheFileInterface {
 		return cacheFileMock
 	}
-	assert.Empty(t, captureLog(func() { resp.Store(key) }))
+	assert.Empty(t, tests.CaptureLog(func() { resp.Store(key) }))
 	assert.False(t, index.contains(key))
 	assert.False(t, cacheFileMock.scheduledForDeletion)
 }
@@ -145,7 +146,7 @@ func TestStoreWriteToCacheError(t *testing.T) {
 		}
 	}
 	defer func() { newCacheEntryWriter = newCacheEntryWriterBackup }()
-	assert.NotEmpty(t, captureLog(func() { resp.Store(key) }))
+	assert.NotEmpty(t, tests.CaptureLog(func() { resp.Store(key) }))
 	assert.False(t, index.contains(key))
 	assert.False(t, cacheFileMock.scheduledForDeletion)
 	assert.True(t, cacheFileMock.deleted)

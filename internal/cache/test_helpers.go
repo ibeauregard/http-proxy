@@ -1,9 +1,6 @@
 package cache
 
 import (
-	"bytes"
-	"log"
-	"os"
 	"time"
 )
 
@@ -14,11 +11,3 @@ var (
 	cacheDirNameBackup        = cacheDirName
 	newCacheEntryWriterBackup = newCacheEntryWriter
 )
-
-func captureLog(f func()) string {
-	buf := bytes.Buffer{}
-	log.SetOutput(&buf)
-	defer func() { log.SetOutput(os.Stderr) }()
-	f()
-	return buf.String()
-}

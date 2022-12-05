@@ -9,6 +9,7 @@ import (
 	"io"
 	"math/rand"
 	"my_proxy/internal/http_"
+	"my_proxy/internal/tests"
 	"net/http"
 	"strings"
 	"testing"
@@ -226,7 +227,7 @@ func TestSetCachedHeadersError(t *testing.T) {
 				},
 			}
 			var err error
-			assert.NotEmpty(t, captureLog(func() { err = builder.setCachedHeaders() }))
+			assert.NotEmpty(t, tests.CaptureLog(func() { err = builder.setCachedHeaders() }))
 			assert.NotNil(t, err)
 		})
 	}
@@ -296,7 +297,7 @@ func TestSetAgeHeaderError(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			builder := &cacheResponseBuilder{response: &http_.Response{Response: &http.Response{}}}
 			var err error
-			assert.NotEmpty(t, captureLog(func() { err = builder.setAgeHeader() }))
+			assert.NotEmpty(t, tests.CaptureLog(func() { err = builder.setAgeHeader() }))
 			assert.NotNil(t, err)
 		})
 	}
@@ -357,7 +358,7 @@ func TestGetLineError(t *testing.T) {
 		testName := fmt.Sprintf("getLine(r=%v)", reader)
 		t.Run(testName, func(t *testing.T) {
 			var err error
-			assert.NotEmpty(t, captureLog(func() { _, err = getLine(reader) }))
+			assert.NotEmpty(t, tests.CaptureLog(func() { _, err = getLine(reader) }))
 			assert.NotNil(t, err)
 		})
 	}
@@ -409,7 +410,7 @@ func TestGetStatusCodeError(t *testing.T) {
 		testName := fmt.Sprintf("getStatusCode(line=%s", line)
 		t.Run(testName, func(t *testing.T) {
 			var err error
-			assert.NotEmpty(t, captureLog(func() { _, err = getStatusCode(line) }))
+			assert.NotEmpty(t, tests.CaptureLog(func() { _, err = getStatusCode(line) }))
 			assert.NotNil(t, err)
 		})
 	}
