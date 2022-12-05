@@ -5,11 +5,23 @@ import (
 	"io"
 	"my_proxy/internal/errors_"
 	"my_proxy/internal/http_"
+	"net/http"
 	"time"
 )
 
 type CacheableResponse struct {
 	*http_.Response
+}
+
+type cacheFileInterface interface {
+	open() *file
+	delete()
+	create() *file
+	scheduleDeletion(time.Duration)
+}
+
+var newCacheFile = func(key string) cacheFileInterface {
+	return &cacheFile{key}
 }
 
 func (r *CacheableResponse) Store(cacheKey string) {
@@ -28,7 +40,7 @@ func (r *CacheableResponse) Store(cacheKey string) {
 		cacheFile.delete()
 		return
 	}
-	index.store(cacheFile.key, time.Now().Add(cacheLifespan))
+	index.store(cacheKey, timeDotNow().Add(cacheLifespan))
 	cacheFile.scheduleDeletion(cacheLifespan)
 }
 
@@ -50,8 +62,19 @@ func Retrieve(cacheKey string) *http_.Response {
 	return response
 }
 
+type cacheEntryWriterInterface interface {
+	writeStatusLine(proto string, statusCode int) error
+	writeHeaders(headers http.Header) error
+	writeBody(body io.Reader) error
+	Flush() error
+}
+
+var newCacheEntryWriter = func(f io.Writer) cacheEntryWriterInterface {
+	return &cacheEntryWriter{bufio.NewWriter(f)}
+}
+
 func (r *CacheableResponse) writeToCache(f io.Writer) error {
-	w := cacheEntryWriter{bufio.NewWriter(f)}
+	w := newCacheEntryWriter(f)
 	if err := w.writeStatusLine(r.Proto, r.StatusCode); err != nil {
 		return errors_.Format(r.writeToCache, err)
 	}

@@ -14,10 +14,6 @@ type cacheFile struct {
 
 var cacheDirName = os.Getenv("CACHE_DIR_NAME")
 
-func newCacheFile(cacheKey string) *cacheFile {
-	return &cacheFile{cacheKey}
-}
-
 func (f *cacheFile) path() string {
 	return filepath.Join(cacheDirName, f.key)
 }
@@ -60,12 +56,7 @@ func (f *cacheFile) scheduleDeletion(lifespan time.Duration) {
 }
 
 type file struct {
-	fileInterface
-}
-
-type fileInterface interface {
-	io.ReadCloser
-	io.Writer
+	io.ReadWriteCloser
 }
 
 func (f *file) close() {

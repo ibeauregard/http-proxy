@@ -5,7 +5,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
-	"time"
 )
 
 func TestSysCreateSuccess(t *testing.T) {
@@ -44,11 +43,4 @@ func TestSysOpenError(t *testing.T) {
 	file, err := sysOpen("foobar")
 	assert.NotNil(t, err)
 	assert.Nil(t, file)
-}
-
-func TestTimeDotNow(t *testing.T) {
-	timeFunc = func() time.Time {
-		return nowMock
-	}
-	assert.EqualValues(t, nowMock, timeDotNow())
 }

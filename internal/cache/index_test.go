@@ -171,7 +171,7 @@ func TestLoadDecodingError(t *testing.T) {
 
 func TestCacheFileFactory(t *testing.T) {
 	key := "my_key"
-	assert.EqualValues(t, &cacheFile{key}, updateCacheCacheFileFactory(key))
+	assert.EqualValues(t, &cacheFile{key}, newCacheFileForUpdateCache(key))
 }
 
 type cacheFileDeleterMock struct {
@@ -241,7 +241,7 @@ func TestUpdateCache(t *testing.T) {
 				expectedIndex[key] = deletionTime
 			}
 		}
-		updateCacheCacheFileFactory = func(cacheKey string) updateCacheCacheFileInterface {
+		newCacheFileForUpdateCache = func(cacheKey string) cacheFileInterfaceForUpdateCache {
 			return &cacheFileDeleterMock{
 				key:       cacheKey,
 				cache:     mockCache,

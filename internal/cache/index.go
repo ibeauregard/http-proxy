@@ -84,23 +84,23 @@ func Load() {
 	updateCache(m)
 }
 
-type updateCacheCacheFileInterface interface {
+type cacheFileInterfaceForUpdateCache interface {
 	delete()
 	scheduleDeletion(time.Duration)
 }
 
-var updateCacheCacheFileFactory = func(cacheKey string) updateCacheCacheFileInterface {
-	return newCacheFile(cacheKey)
+var newCacheFileForUpdateCache = func(cacheKey string) cacheFileInterfaceForUpdateCache {
+	return &cacheFile{cacheKey}
 }
 
 var updateCache = func(m map[string]time.Time) {
 	for key, deletionTime := range m {
 		now := timeDotNow()
 		if deletionTime.Before(now) {
-			updateCacheCacheFileFactory(key).delete()
+			newCacheFileForUpdateCache(key).delete()
 		} else {
 			index.store(key, deletionTime)
-			updateCacheCacheFileFactory(key).scheduleDeletion(deletionTime.Sub(now))
+			newCacheFileForUpdateCache(key).scheduleDeletion(deletionTime.Sub(now))
 		}
 	}
 }

@@ -10,12 +10,6 @@ import (
 	"time"
 )
 
-func TestNewCacheFile(t *testing.T) {
-	for _, key := range []string{"", "key1", "key2"} {
-		assert.EqualValues(t, &cacheFile{key}, newCacheFile(key))
-	}
-}
-
 func TestPath(t *testing.T) {
 	tests := []struct {
 		dirName  string
@@ -137,7 +131,7 @@ func TestScheduleDeletion(t *testing.T) {
 }
 
 type osFileMock struct {
-	fileInterface
+	io.ReadWriteCloser
 	err error
 }
 
