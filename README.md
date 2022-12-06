@@ -1,5 +1,7 @@
 # HTTP Proxy
-
+![Build and tests](https://github.com/ibeauregard/http-proxy/actions/workflows/test-and-build.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ibeauregard/http-proxy)](https://goreportcard.com/report/github.com/ibeauregard/http-proxy)
+[![codecov](https://codecov.io/gh/ibeauregard/http-proxy/branch/master/graph/badge.svg)](https://codecov.io/gh/ibeauregard/http-proxy)
 
 ## Overview
 
