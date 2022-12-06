@@ -48,7 +48,12 @@ Suggestion: Pipe `curl`'s output to `less` if you want to easily view the header
 
 
 ## How to test
-TODO [To be added shortly.]
+The `make test` target runs a full suite of unit tests. Also, `make build` will not succeed if any of the unit tests fail.
+
+After you ran `make test`, if you have Go installed on your host, you can run `go tool cover -html=tests/unit/coverage.out` to see the test coverage in your web browser.
+
+If you have Go installed on your host, you can also run the test suite by executing `go test -v  ./... `.
+
 
 ## Key points about design and functionality
 
