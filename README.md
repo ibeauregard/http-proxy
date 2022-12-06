@@ -123,3 +123,8 @@ A custom server header is also added to all responses.
 What's more, a response sent from the cache will have a `X-Cache: HIT` header and an `Age` header specifying the number of seconds elapsed since the request was committed to cache.
 
 A response sent directly from the upstream server will have a `X-Cache: MISS` header.
+
+## Credits
+
+<span><i>Made at <a href='https://qwasar.io'>Qwasar Silicon Valley</a></i></span>
+<span><img alt='Qwasar Silicon Valley Logo' src='https://storage.googleapis.com/qwasar-public/qwasar-logo_50x50.png' width='20px'></span>
