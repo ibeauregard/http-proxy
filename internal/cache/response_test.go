@@ -190,7 +190,7 @@ func TestRetrieveSuccess(t *testing.T) {
 		"Age":           {strconv.Itoa(age)},
 	}, response.Header)
 	writer := &strings.Builder{}
-	io.Copy(writer, response.Body)
+	_, _ = io.Copy(writer, response.Body)
 	assert.Equal(t, "Response body", writer.String())
 }
 

@@ -21,12 +21,14 @@ func NewResponse(r *http.Response) *Response {
 	return resp
 }
 
+var ioCopy = io.Copy
+
 func (r *Response) Serve(writer http.ResponseWriter) {
 	defer r.Body.Close()
 	writeHeaders(writer, r.Header)
 	writer.WriteHeader(r.StatusCode)
 
-	_, err := io.Copy(writer, r.Body)
+	_, err := ioCopy(writer, r.Body)
 	if err != nil {
 		errors_.Log(r.Serve, err)
 	}

@@ -147,7 +147,7 @@ func TestWriteBodyNoError(t *testing.T) {
 			buf := &bytes.Buffer{}
 			writer := bufio.NewWriter(buf)
 			output := (&cacheEntryWriter{writer}).writeBody(strings.NewReader(body))
-			writer.Flush()
+			_ = writer.Flush()
 			// Will not work with .EqualValues in the case of empty body; []byte{} vs []byte(nil)
 			assert.True(t, bytes.Equal([]byte(body), buf.Bytes()))
 			assert.Nil(t, output)
