@@ -1,17 +1,26 @@
 # syntax=docker/dockerfile:1
 FROM golang:1.19.0-alpine3.16 as build-image
 ARG APP_NAME
+ARG TEST_COVERAGE_FILENAME
+RUN apk add --no-cache build-base
 COPY go.mod /app/
 WORKDIR /app
+RUN go mod download
 COPY . .
+RUN go test -v -coverprofile=$TEST_COVERAGE_FILENAME ./...
 RUN go build -o $APP_NAME ./internal
 
 FROM alpine:3.16
 ARG APP_NAME
 ARG CACHE_DIR_NAME
+ARG ENTRY_SCRIPT_NAME
+ARG TEST_COVERAGE_FILENAME
+ARG UNIT_TESTS_DIR_PATH
 WORKDIR /home/$APP_NAME
-COPY --from=build-image /app/$APP_NAME ./
+COPY --from=build-image /app/$APP_NAME /app/$TEST_COVERAGE_FILENAME ./
+VOLUME ["/home/$APP_NAME/$CACHE_DIR_NAME"]
+VOLUME ["/home/$APP_NAME/$UNIT_TESTS_DIR_PATH"]
 COPY $CACHE_DIR_NAME/ $CACHE_DIR_NAME/
+COPY $ENTRY_SCRIPT_NAME ./
 EXPOSE 8080
-ENV APP_NAME ${APP_NAME}
-CMD ["sh", "-c", "./$APP_NAME"]
+CMD ["/bin/sh", "-c", "sh ${ENTRY_SCRIPT_NAME} ${APP_NAME} ${TEST_COVERAGE_FILENAME} ${UNIT_TESTS_DIR_PATH}"]

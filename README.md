@@ -17,6 +17,8 @@ Make sure your Docker daemon is running.
 
 After you cloned the repo, you can simply execute `make build run` from the project's root directory. When you build the project for the first time, expect a relatively long build, since some dependencies will have to be downloaded. Subsequent builds will be much faster.
 
+Simply use `make run` if you don't need to rebuild the project.
+
 See the Makefile for a list of `make` targets that you can use if needed.
 
 Once running, the Forward Proxy listens and serves on [http://localhost:8080](http://localhost:8080).

@@ -1,3 +1,4 @@
 .idea
 cache/*
 coverage.out
+./tests
