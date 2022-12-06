@@ -15,7 +15,7 @@ build:
 	docker image prune -f
 
 run:
-	docker run --interactive --tty --name=$(container_name) \
+	docker run --interactive --tty $(RUN_OPTIONS) --name=$(container_name) \
 		--volume $(volume_name):/home/$(app_name)/$(cache_dir_name) \
 		--volume=$(shell pwd)/$(unit_tests_dir_path):/home/$(app_name)/$(unit_tests_dir_path) \
 		--publish 8080:8080 --rm \
@@ -24,6 +24,9 @@ run:
 		--env ENTRY_SCRIPT_NAME=$(entry_script_name) \
 		--env TEST_COVERAGE_FILENAME=$(test_coverage_filename) \
 		--env UNIT_TESTS_DIR_PATH=$(unit_tests_dir_path) $(app_name):latest
+
+test: build
+	make RUN_OPTIONS=--detach run stop
 
 restart: stop run
 
