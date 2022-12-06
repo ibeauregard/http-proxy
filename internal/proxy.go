@@ -3,10 +3,10 @@ package main
 import (
 	"bytes"
 	"errors"
+	"github.com/ibeauregard/http-proxy/internal/cache"
+	"github.com/ibeauregard/http-proxy/internal/errors_"
+	"github.com/ibeauregard/http-proxy/internal/http_"
 	"io"
-	"my_proxy/internal/cache"
-	"my_proxy/internal/errors_"
-	"my_proxy/internal/http_"
 	"net/http"
 	"net/url"
 )

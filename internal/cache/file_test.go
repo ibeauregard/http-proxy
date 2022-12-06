@@ -3,9 +3,9 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"github.com/ibeauregard/http-proxy/internal/tests"
 	"github.com/stretchr/testify/assert"
 	"io"
-	"my_proxy/internal/tests"
 	"os"
 	"testing"
 	"time"

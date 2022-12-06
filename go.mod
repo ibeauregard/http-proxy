@@ -1,4 +1,4 @@
-module my_proxy
+module github.com/ibeauregard/http-proxy
 
 go 1.19
 

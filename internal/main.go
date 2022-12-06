@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/ibeauregard/http-proxy/internal/cache"
 	"github.com/ztrue/shutdown"
 	"log"
-	"my_proxy/internal/cache"
 	"net/http"
 	"syscall"
 )

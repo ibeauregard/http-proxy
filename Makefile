@@ -1,4 +1,4 @@
-app_name := my_proxy
+app_name := http-proxy
 container_name := $(app_name)_container
 volume_name := $(app_name)_cache
 cache_dir_name := cache

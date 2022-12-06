@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"my_proxy/internal/errors_"
+	"github.com/ibeauregard/http-proxy/internal/errors_"
 	"path/filepath"
 	"sync"
 	"time"

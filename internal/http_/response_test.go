@@ -3,9 +3,9 @@ package http_
 import (
 	"errors"
 	"fmt"
+	"github.com/ibeauregard/http-proxy/internal/tests"
 	"github.com/stretchr/testify/assert"
 	"io"
-	"my_proxy/internal/tests"
 	"net/http"
 	"net/http/httptest"
 	"strings"

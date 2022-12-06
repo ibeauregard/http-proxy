@@ -2,9 +2,9 @@ package cache
 
 import (
 	"bufio"
+	"github.com/ibeauregard/http-proxy/internal/errors_"
+	"github.com/ibeauregard/http-proxy/internal/http_"
 	"io"
-	"my_proxy/internal/errors_"
-	"my_proxy/internal/http_"
 	"net/http"
 	"regexp"
 	"strconv"

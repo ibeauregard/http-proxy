@@ -2,8 +2,8 @@ package cache
 
 import (
 	"fmt"
+	"github.com/ibeauregard/http-proxy/internal/errors_"
 	"io"
-	"my_proxy/internal/errors_"
 	"net/http"
 )
 

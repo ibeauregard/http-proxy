@@ -3,13 +3,13 @@ package errors_
 import (
 	"errors"
 	"fmt"
+	"github.com/ibeauregard/http-proxy/internal/tests"
 	"github.com/stretchr/testify/assert"
-	"my_proxy/internal/tests"
 	"strings"
 	"testing"
 )
 
-var packagePath = "my_proxy/internal/errors_"
+var packagePath = "github.com/ibeauregard/http-proxy/internal/errors_"
 
 func TestLog(t *testing.T) {
 	errorMessage := "my error message"
